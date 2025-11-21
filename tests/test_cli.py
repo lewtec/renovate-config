@@ -1,16 +1,12 @@
-#!/usr/bin/env python3
 """
-Simple test to verify the add_renovate_preset.py script works correctly
+Tests for the renovate-config CLI tool
 """
 
 import json
 import tempfile
 from pathlib import Path
-import sys
 
-# Import the function we want to test
-sys.path.insert(0, str(Path(__file__).parent))
-from add_renovate_preset import add_preset_to_config, detect_indentation
+from renovate_config_cli.cli import add_preset_to_config, detect_indentation
 
 
 def test_add_preset_to_empty_extends():

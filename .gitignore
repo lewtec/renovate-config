@@ -8,3 +8,10 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+.coverage
+htmlcov/
+*.whl
+.venv/
+venv/
+.uv/

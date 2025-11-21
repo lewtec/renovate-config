@@ -14,23 +14,44 @@ To use this preset in your repository, add it to your `renovate.json`:
 
 ## Automated Setup Script
 
-Use the `add_renovate_preset.py` script to automatically add this preset to any GitHub repository:
+Use the `renovate-config` CLI tool to automatically add this preset to any GitHub repository.
+
+### Installation
+
+#### Using UV (recommended)
+
+```bash
+# Install UV if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install the CLI tool
+uv tool install git+https://github.com/lewtec/renovate-config.git
+
+# Or for development
+uv pip install -e .
+```
+
+#### Using pip
+
+```bash
+pip install git+https://github.com/lewtec/renovate-config.git
+```
 
 ### Prerequisites
 
-- Python 3.7+
+- Python 3.8+
 - Git
 - GitHub CLI (`gh`) - optional, for creating PRs automatically
 
 ### Usage
 
 ```bash
-python add_renovate_preset.py <owner> <repo>
+renovate-config <owner> <repo>
 ```
 
 **Example:**
 ```bash
-python add_renovate_preset.py myorg myrepo
+renovate-config myorg myrepo
 ```
 
 This will:
@@ -50,7 +71,24 @@ This will:
 ### Example with custom preset
 
 ```bash
-python add_renovate_preset.py myorg myrepo --preset "github>lewtec/renovate-config:custom"
+renovate-config myorg myrepo --preset "github>lewtec/renovate-config:custom"
+```
+
+### Development
+
+```bash
+# Clone the repository
+git clone https://github.com/lewtec/renovate-config.git
+cd renovate-config
+
+# Install with UV
+uv pip install -e ".[dev]"
+
+# Run tests
+uv run pytest
+
+# Or run directly
+python -m renovate_config_cli.cli <owner> <repo>
 ```
 
 ## Presets

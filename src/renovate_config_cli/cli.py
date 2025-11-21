@@ -1,24 +1,15 @@
-#!/usr/bin/env python3
 """
-Script to add renovate-config preset to a GitHub repository's renovate.json
+CLI tool to add renovate-config preset to a GitHub repository's renovate.json
 
-Usage:
-    python add_renovate_preset.py <owner> <repo>
-
-Example:
-    python add_renovate_preset.py myorg myrepo
-
-This will:
-1. Clone the repository
+This module provides functionality to:
+1. Clone a repository
 2. Find and update renovate.json to include the preset
 3. Create a PR with the changes
 """
 
 import argparse
 import json
-import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -187,6 +178,7 @@ def create_pr_with_gh(repo_path: Path, owner: str, repo: str, base_branch: str) 
 
 
 def main():
+    """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
         description='Add renovate-config preset to a GitHub repository'
     )
