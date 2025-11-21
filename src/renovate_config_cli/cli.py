@@ -128,11 +128,11 @@ def check_gh_cli() -> Tuple[bool, str]:
     Check if gh CLI is installed and authenticated.
     Returns (is_available, error_message)
     """
-    # Check if gh is in PATH
+    # Check if gh is installed
     try:
-        result = run_command(['which', 'gh'], check=False)
+        result = run_command(['gh', '--version'], check=False)
         if result.returncode != 0:
-            return False, "gh CLI not found in PATH. Please install it: https://cli.github.com/"
+            return False, "gh CLI not found. Please install it: https://cli.github.com/"
     except FileNotFoundError:
         return False, "gh CLI not found. Please install it: https://cli.github.com/"
 
@@ -147,31 +147,56 @@ def check_gh_cli() -> Tuple[bool, str]:
     return True, ""
 
 
+def clone_repository(owner: str, repo: str, destination: Path) -> bool:
+    """
+    Clone repository using gh CLI.
+    Returns True if successful, False otherwise.
+    """
+    try:
+        run_command([
+            'gh', 'repo', 'clone',
+            f'{owner}/{repo}',
+            str(destination)
+        ])
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error cloning repository with gh CLI: {e}")
+        print(f"stderr: {e.stderr}")
+        # Fallback to git clone if gh fails
+        try:
+            print("Falling back to git clone...")
+            run_command([
+                'git', 'clone',
+                f'https://github.com/{owner}/{repo}.git',
+                str(destination)
+            ])
+            return True
+        except subprocess.CalledProcessError as e2:
+            print(f"Error cloning repository with git: {e2}")
+            print(f"stderr: {e2.stderr}")
+            return False
+
+
 def create_pr_with_gh(repo_path: Path, owner: str, repo: str, base_branch: str) -> bool:
     """Create a pull request using gh CLI."""
-    # Verify gh CLI is available and authenticated
-    is_available, error_msg = check_gh_cli()
-    if not is_available:
-        print(f"Error: {error_msg}")
-        print(f"Branch '{BRANCH_NAME}' has been pushed to the repository.")
-        print(f"You can create a PR manually at: https://github.com/{owner}/{repo}/compare/{base_branch}...{BRANCH_NAME}")
-        return False
-
     try:
-        # Create PR
+        # Create PR with gh CLI
         result = run_command([
             'gh', 'pr', 'create',
+            '--repo', f'{owner}/{repo}',
             '--title', PR_TITLE,
             '--body', PR_BODY,
             '--base', base_branch,
             '--head', BRANCH_NAME,
         ], cwd=str(repo_path))
 
-        print(f"\n{result.stdout}")
+        print(f"\n✓ Pull request created successfully!")
+        print(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
         print(f"Error creating PR with gh CLI: {e}")
-        print(f"stderr: {e.stderr}")
+        if e.stderr:
+            print(f"stderr: {e.stderr}")
         print(f"\nBranch '{BRANCH_NAME}' has been pushed to the repository.")
         print(f"You can create a PR manually at: https://github.com/{owner}/{repo}/compare/{base_branch}...{BRANCH_NAME}")
         return False
@@ -189,21 +214,21 @@ def main():
 
     args = parser.parse_args()
 
+    # Check gh CLI availability (warn if not available, but don't fail)
+    gh_available, gh_error = check_gh_cli()
+    if not gh_available:
+        print(f"⚠ Warning: {gh_error}")
+        if not args.no_pr:
+            print("  PR creation will not be available. Use --no-pr to suppress this warning.\n")
+
     # Create temporary directory
     with tempfile.TemporaryDirectory() as tmpdir:
         repo_path = Path(tmpdir) / args.repo
 
-        # Clone repository
+        # Clone repository using gh CLI (with git fallback)
         print(f"\nCloning {args.owner}/{args.repo}...")
-        try:
-            run_command([
-                'git', 'clone',
-                f'https://github.com/{args.owner}/{args.repo}.git',
-                str(repo_path)
-            ])
-        except subprocess.CalledProcessError as e:
-            print(f"Error cloning repository: {e}")
-            print(f"stderr: {e.stderr}")
+        if not clone_repository(args.owner, args.repo, repo_path):
+            print("Failed to clone repository")
             return 1
 
         # Find renovate config
@@ -250,8 +275,13 @@ def main():
 
         # Create PR
         if not args.no_pr:
-            print("\nCreating pull request...")
-            create_pr_with_gh(repo_path, args.owner, args.repo, default_branch)
+            if gh_available:
+                print("\nCreating pull request...")
+                create_pr_with_gh(repo_path, args.owner, args.repo, default_branch)
+            else:
+                print(f"\nBranch {BRANCH_NAME} pushed successfully.")
+                print(f"⚠ Cannot create PR: {gh_error}")
+                print(f"Create a PR manually at: https://github.com/{args.owner}/{args.repo}/compare/{default_branch}...{BRANCH_NAME}")
         else:
             print(f"\nBranch {BRANCH_NAME} pushed successfully.")
             print(f"Create a PR at: https://github.com/{args.owner}/{args.repo}/compare/{default_branch}...{BRANCH_NAME}")
