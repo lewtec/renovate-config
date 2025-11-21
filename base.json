@@ -1,0 +1,82 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "abandonments:recommended",
+    ":configMigration",
+    ":dependencyDashboard",
+    ":disableRateLimiting",
+    ":docker",
+    ":enableVulnerabilityAlerts",
+    ":maintainLockFilesWeekly",
+    ":rebaseStalePrs",
+    ":separateMultipleMajorReleases",
+    "docker:pinDigests",
+    "group:recommended",
+    "helpers:pinGitHubActionDigests",
+    "security:openssf-scorecard",
+    "workarounds:all",
+    ":automergeRequireAllStatusChecks"
+  ],
+  "automergeType": "pr",
+  "configMigration": true,
+  "separateMultipleMajor": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "recreateWhen": "always",
+    "rebaseStalePrs": true,
+    "branchTopic": "lock-file-maintenance"
+  },
+  "nix": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "automerge": true
+    },
+    {
+      "matchPackageNames": [
+        "@cloudflare/workers-types",
+        "@cloudflare/workerd-linux-64",
+        "wrangler"
+      ],
+      "automerge": true,
+      "ignoreTests": true
+    },
+    {
+      "description": "Group Go updates across Dockerfile and mise.toml",
+      "matchDatasources": [
+        "docker",
+        "golang-version"
+      ],
+      "matchPackageNames": [
+        "golang",
+        "go"
+      ],
+      "groupName": "Go version"
+    },
+    {
+      "matchPackageNames": [
+        "albumentations" // discontinued, the last version available there is good enough
+      ],
+      "enabled": false
+    },
+    {
+      "matchManagers": [
+        "terraform"
+      ],
+      "matchDepTypes": "required_provider",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true
+    }
+  ]
+}
