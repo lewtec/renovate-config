@@ -2,7 +2,7 @@
 LOG_LEVEL = "debug"
 
 [tools]
-node = "24.11.1"
+"aqua:nodejs/node" = "24.11.1"
 
 [tasks.test]
 run = "npx -y renovate '--platform=local' '--repository-cache=reset'"
