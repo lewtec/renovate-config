@@ -78,6 +78,12 @@
       ],
       "automerge": true
     },
+    {
+      "matchPackageNames": [
+        "elgohr/Github-Release-Action"
+      ],
+      "allowedVersions": "v5" // Ideally everything should use bare gh commands
+    },
     // https://github.com/peter-evans/create-pull-request/issues/4228
     {
       "matchDepNames": "actions/checkout",
