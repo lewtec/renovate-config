@@ -86,9 +86,10 @@
     },
     // https://github.com/peter-evans/create-pull-request/issues/4228
     {
-      "matchDepNames": "actions/checkout",
-      "allowedVersions": "<=5",
-      "rangeStrategy": "replace"
+      "matchPackageNames": [
+        "actions/checkout"
+      ],
+      "allowedVersions": "<6.0.0"
     }
   ]
 }
