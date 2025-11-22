@@ -90,6 +90,14 @@
         "actions/checkout"
       ],
       "allowedVersions": "<6.0.0"
+    },
+    {
+      "matchPackageNames": [
+        "actions/checkout"
+      ],
+      "matchCurrentVersion": "v6",
+      "groupName": "downgrade actions/checkout to v5",
+      "followTag": "v5"
     }
   ]
 }
