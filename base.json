@@ -77,6 +77,11 @@
         "patch"
       ],
       "automerge": true
+    },
+    // https://github.com/peter-evans/create-pull-request/issues/4228
+    {
+      "matchDepNames": "actions/checkout",
+      "allowedVersions": "<=5"
     }
   ]
 }
