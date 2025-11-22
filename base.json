@@ -97,7 +97,7 @@
       ],
       "matchCurrentVersion": "v6",
       "groupName": "downgrade actions/checkout to v5",
-      "followTag": "v5"
+      "followTag": "v5.0.1"
     }
   ]
 }
