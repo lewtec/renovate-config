@@ -111,6 +111,18 @@
         "uv"
       ],
       "groupName": "uv version"
+    },
+    {
+      "description": "Group Bun updates across Docker and mise.toml",
+      "matchDatasources": [
+        "docker",
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "oven/bun",
+        "bun"
+      ],
+      "groupName": "Bun version"
     }
   ]
 }
