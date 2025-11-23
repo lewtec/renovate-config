@@ -100,6 +100,15 @@
       "groupName": "Node.js version"
     },
 
+    // Migrate node to aqua:nodejs/node in mise.toml
+    {
+      "description": "Migrate mise node to aqua:nodejs/node (uses official binary instead of building from source)",
+      "matchManagers": ["mise"],
+      "matchPackageNames": ["node"],
+      "replacementName": "aqua:nodejs/node",
+      "replacementVersion": "auto"
+    },
+
     {
       "matchPackageNames": [
         "albumentations" // discontinued, the last version available there is good enough
