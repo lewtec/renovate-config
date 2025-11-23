@@ -99,6 +99,18 @@
       "groupName": "downgrade actions/checkout to v5",
       "overridePackageName": "actions/checkout",
       "replacementVersion": "v5.0.1"
+    },
+    {
+      "description": "Group uv updates across Docker and mise.toml",
+      "matchDatasources": [
+        "docker",
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/astral-sh/uv",
+        "uv"
+      ],
+      "groupName": "uv version"
     }
   ]
 }
