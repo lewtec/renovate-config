@@ -123,6 +123,18 @@
         "bun"
       ],
       "groupName": "Bun version"
+    },
+    {
+      "description": "Group Node.js updates across Docker and mise.toml",
+      "matchDatasources": [
+        "docker",
+        "node-version"
+      ],
+      "matchPackageNames": [
+        "node",
+        "aqua:nodejs/node"
+      ],
+      "groupName": "Node.js version"
     }
   ]
 }
