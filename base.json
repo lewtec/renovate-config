@@ -49,6 +49,8 @@
       "automerge": true,
       "ignoreTests": true
     },
+
+    // Group tool versions across Docker and mise.toml
     {
       "description": "Group Go updates across Dockerfile and mise.toml",
       "matchDatasources": [
@@ -61,6 +63,43 @@
       ],
       "groupName": "Go version"
     },
+    {
+      "description": "Group uv updates across Docker and mise.toml",
+      "matchDatasources": [
+        "docker",
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/astral-sh/uv",
+        "uv"
+      ],
+      "groupName": "uv version"
+    },
+    {
+      "description": "Group Bun updates across Docker and mise.toml",
+      "matchDatasources": [
+        "docker",
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "oven/bun",
+        "bun"
+      ],
+      "groupName": "Bun version"
+    },
+    {
+      "description": "Group Node.js updates across Docker and mise.toml",
+      "matchDatasources": [
+        "docker",
+        "node-version"
+      ],
+      "matchPackageNames": [
+        "node",
+        "aqua:nodejs/node"
+      ],
+      "groupName": "Node.js version"
+    },
+
     {
       "matchPackageNames": [
         "albumentations" // discontinued, the last version available there is good enough
@@ -99,42 +138,6 @@
       "groupName": "downgrade actions/checkout to v5",
       "overridePackageName": "actions/checkout",
       "replacementVersion": "v5.0.1"
-    },
-    {
-      "description": "Group uv updates across Docker and mise.toml",
-      "matchDatasources": [
-        "docker",
-        "github-releases"
-      ],
-      "matchPackageNames": [
-        "ghcr.io/astral-sh/uv",
-        "uv"
-      ],
-      "groupName": "uv version"
-    },
-    {
-      "description": "Group Bun updates across Docker and mise.toml",
-      "matchDatasources": [
-        "docker",
-        "github-releases"
-      ],
-      "matchPackageNames": [
-        "oven/bun",
-        "bun"
-      ],
-      "groupName": "Bun version"
-    },
-    {
-      "description": "Group Node.js updates across Docker and mise.toml",
-      "matchDatasources": [
-        "docker",
-        "node-version"
-      ],
-      "matchPackageNames": [
-        "node",
-        "aqua:nodejs/node"
-      ],
-      "groupName": "Node.js version"
     }
   ]
 }
