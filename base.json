@@ -8,7 +8,6 @@
     ":disableRateLimiting",
     ":docker",
     ":enableVulnerabilityAlerts",
-    ":maintainLockFilesWeekly",
     ":rebaseStalePrs",
     ":separateMultipleMajorReleases",
     "docker:pinDigests",
@@ -21,12 +20,6 @@
   "automergeType": "pr",
   "configMigration": true,
   "separateMultipleMajor": true,
-  "lockFileMaintenance": {
-    "enabled": true,
-    "recreateWhen": "always",
-    "rebaseStalePrs": true,
-    "branchTopic": "lock-file-maintenance"
-  },
   "nix": {
     "enabled": true
   },
@@ -49,66 +42,100 @@
       "automerge": true,
       "ignoreTests": true
     },
-
     // Group tool versions across Docker and mise.toml
     {
       "description": "Group Go updates from Docker",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["golang"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "golang"
+      ],
       "groupName": "Go version"
     },
     {
       "description": "Group Go updates from mise.toml",
-      "matchDatasources": ["golang-version"],
-      "matchPackageNames": ["go"],
+      "matchDatasources": [
+        "golang-version"
+      ],
+      "matchPackageNames": [
+        "go"
+      ],
       "groupName": "Go version"
     },
     {
       "description": "Group uv updates from Docker",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["ghcr.io/astral-sh/uv"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/astral-sh/uv"
+      ],
       "groupName": "uv version"
     },
     {
       "description": "Group uv updates from mise.toml",
-      "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["uv"],
+      "matchDatasources": [
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "uv"
+      ],
       "groupName": "uv version"
     },
     {
       "description": "Group Bun updates from Docker",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["oven/bun"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "oven/bun"
+      ],
       "groupName": "Bun version"
     },
     {
       "description": "Group Bun updates from mise.toml",
-      "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["bun"],
+      "matchDatasources": [
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "bun"
+      ],
       "groupName": "Bun version"
     },
     {
       "description": "Group Node.js updates from Docker",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["node"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "node"
+      ],
       "groupName": "Node.js version"
     },
     {
       "description": "Group Node.js updates from mise.toml",
-      "matchDatasources": ["node-version"],
-      "matchPackageNames": ["node", "aqua:nodejs/node"],
+      "matchDatasources": [
+        "node-version"
+      ],
+      "matchPackageNames": [
+        "node",
+        "aqua:nodejs/node"
+      ],
       "groupName": "Node.js version"
     },
-
     // Migrate node to aqua:nodejs/node in mise.toml
     {
       "description": "Migrate mise node to aqua:nodejs/node (uses official binary instead of building from source)",
-      "matchManagers": ["mise"],
-      "matchPackageNames": ["node"],
+      "matchManagers": [
+        "mise"
+      ],
+      "matchPackageNames": [
+        "node"
+      ],
       "replacementName": "aqua:nodejs/node",
       "replacementVersion": "auto"
     },
-
     {
       "matchPackageNames": [
         "albumentations" // discontinued, the last version available there is good enough
