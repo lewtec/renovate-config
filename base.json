@@ -17,6 +17,9 @@
     "workarounds:all",
     ":automergeRequireAllStatusChecks"
   ],
+  "schedule": [
+    "at 08:00 on every day-of-week in America/Sao_Paulo"
+  ],
   "automergeType": "pr",
   "configMigration": true,
   "separateMultipleMajor": true,
