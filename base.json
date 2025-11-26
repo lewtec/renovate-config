@@ -15,7 +15,8 @@
     "helpers:pinGitHubActionDigests",
     "security:openssf-scorecard",
     "workarounds:all",
-    ":automergeRequireAllStatusChecks"
+    ":automergeRequireAllStatusChecks",
+    "schedule:daily"
   ],
   "automergeType": "pr",
   "configMigration": true,
