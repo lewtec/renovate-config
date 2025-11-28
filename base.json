@@ -8,7 +8,6 @@
     ":disableRateLimiting",
     ":docker",
     ":enableVulnerabilityAlerts",
-    ":rebaseStalePrs",
     ":separateMultipleMajorReleases",
     "docker:pinDigests",
     "group:recommended",
@@ -18,6 +17,7 @@
     ":automergeRequireAllStatusChecks",
     "schedule:daily"
   ],
+  "updateNotScheduled": false,
   "automergeType": "pr",
   "configMigration": true,
   "separateMultipleMajor": true,
