@@ -98,11 +98,17 @@ def add_preset_to_config(config_path: Path, preset_ref: str) -> bool:
 
     # Check if preset already exists
     if preset_ref in config['extends']:
-        print(f"Preset {preset_ref} already exists in extends")
-        return False
+        # If it is already the last element, do nothing
+        if config['extends'][-1] == preset_ref:
+            print(f"Preset {preset_ref} already exists at the end of extends")
+            return False
 
-    # Add preset at the beginning of extends array
-    config['extends'].insert(0, preset_ref)
+        # Otherwise remove it so we can append it to the end
+        config['extends'].remove(preset_ref)
+        print(f"Moving {preset_ref} to the end of extends array")
+
+    # Add preset at the end of extends array
+    config['extends'].append(preset_ref)
 
     # Write back with same indentation
     indent_str = indent if indent != '\t' else '\t'

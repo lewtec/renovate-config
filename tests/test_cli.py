@@ -53,15 +53,15 @@ def test_add_preset_to_existing_extends():
 
         assert "github>lewtec/renovate-config:base" in updated_config["extends"]
         assert "config:recommended" in updated_config["extends"]
-        # Should be inserted at the beginning
-        assert updated_config["extends"][0] == "github>lewtec/renovate-config:base"
+        # Should be inserted at the end
+        assert updated_config["extends"][-1] == "github>lewtec/renovate-config:base"
         print("✓ test_add_preset_to_existing_extends passed")
     finally:
         temp_path.unlink()
 
 
-def test_preset_already_exists():
-    """Test that script detects when preset already exists"""
+def test_move_preset_to_end():
+    """Test that script moves preset to end if it already exists but not at end"""
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
         config = {
             "$schema": "https://docs.renovatebot.com/renovate-schema.json",
@@ -73,8 +73,32 @@ def test_preset_already_exists():
 
     try:
         result = add_preset_to_config(temp_path, "github>lewtec/renovate-config:base")
-        assert result == False, "Should return False when preset already exists"
-        print("✓ test_preset_already_exists passed")
+        assert result == True, "Should return True when preset is moved"
+
+        with open(temp_path, 'r') as f:
+            updated_config = json.load(f)
+
+        assert updated_config["extends"][-1] == "github>lewtec/renovate-config:base"
+        print("✓ test_move_preset_to_end passed")
+    finally:
+        temp_path.unlink()
+
+
+def test_preset_already_at_end():
+    """Test that script detects when preset already exists at the end"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        config = {
+            "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+            "extends": ["config:recommended", "github>lewtec/renovate-config:base"]
+        }
+        json.dump(config, f, indent=2)
+        f.flush()
+        temp_path = Path(f.name)
+
+    try:
+        result = add_preset_to_config(temp_path, "github>lewtec/renovate-config:base")
+        assert result == False, "Should return False when preset already exists at the end"
+        print("✓ test_preset_already_at_end passed")
     finally:
         temp_path.unlink()
 
@@ -122,7 +146,7 @@ def test_preserves_formatting():
 
         # Check that file still has proper JSON structure
         updated_config = json.loads(updated_content)
-        assert updated_config["extends"][0] == "github>lewtec/renovate-config:base"
+        assert updated_config["extends"][-1] == "github>lewtec/renovate-config:base"
         assert updated_config["automerge"] == True
 
         # Check indentation is preserved (2 spaces)
@@ -138,6 +162,7 @@ if __name__ == '__main__':
     test_indentation_detection()
     test_add_preset_to_empty_extends()
     test_add_preset_to_existing_extends()
-    test_preset_already_exists()
+    test_move_preset_to_end()
+    test_preset_already_at_end()
     test_preserves_formatting()
     print("\n✓ All tests passed!")
