@@ -6,4 +6,11 @@ LOG_LEVEL = "debug"
 uv = "0.9.11"
 
 [tasks.test]
+run = "uv run pytest"
+env = { PYTHONPATH = "src" }
+
+[tasks."test:renovate"]
 run = "npx -y renovate '--platform=local' '--repository-cache=reset'"
+
+[tasks.ci]
+depends = ["test"]
