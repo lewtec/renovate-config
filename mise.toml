@@ -6,7 +6,7 @@ LOG_LEVEL = "debug"
 uv = "0.9.11"
 
 [tasks.install]
-run = "uv sync"
+run = "uv sync --all-extras"
 
 [tasks.test]
 depends = ["install"]
