@@ -14,7 +14,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 
 PRESET_REF = "github>lewtec/renovate-config:base"
@@ -208,39 +208,58 @@ def create_pr_with_gh(repo_path: Path, owner: str, repo: str, base_branch: str) 
         return False
 
 
-def main():
-    """Main entry point for the CLI."""
-    parser = argparse.ArgumentParser(
-        description='Add renovate-config preset to a GitHub repository'
-    )
-    parser.add_argument('owner', help='GitHub repository owner')
-    parser.add_argument('repo', help='GitHub repository name')
-    parser.add_argument('--preset', default=PRESET_REF, help=f'Preset reference (default: {PRESET_REF})')
-    parser.add_argument('--no-pr', action='store_true', help='Do not create a PR, just push the branch')
+def get_repositories(owner: str, include_forks: bool = False) -> List[str]:
+    """
+    Get all repositories for the given owner (user or organization).
+    Returns a list of repository names.
+    """
+    print(f"Fetching repositories for {owner}...")
+    try:
+        # Fetch repos with name and isFork fields
+        # gh repo list <owner> --json name,isFork --limit 1000
+        result = run_command(['gh', 'repo', 'list', owner, '--json', 'name,isFork', '--limit', '1000', '--no-archived'])
+        repos_json = json.loads(result.stdout)
 
-    args = parser.parse_args()
+        repos = []
+        for repo in repos_json:
+            if not include_forks and repo.get('isFork', False):
+                continue
+            repos.append(repo['name'])
 
-    # Check gh CLI availability (warn if not available, but don't fail)
-    gh_available, gh_error = check_gh_cli()
-    if not gh_available:
-        print(f"⚠ Warning: {gh_error}")
-        if not args.no_pr:
-            print("  PR creation will not be available. Use --no-pr to suppress this warning.\n")
+        return repos
+    except subprocess.CalledProcessError as e:
+        print(f"Error fetching repositories for {owner}: {e}")
+        if e.stderr:
+            print(f"stderr: {e.stderr}")
+        return []
+    except json.JSONDecodeError as e:
+        print(f"Error parsing repository list: {e}")
+        return []
+
+
+def process_repository(owner: str, repo: str, preset_ref: str, no_pr: bool, gh_available: bool, gh_error: str) -> int:
+    """
+    Process a single repository: clone, update config, push, and create PR.
+    Returns 0 on success, 1 on failure.
+    """
+    print(f"\n{'='*50}")
+    print(f"Processing repository: {owner}/{repo}")
+    print(f"{'='*50}\n")
 
     # Create temporary directory
     with tempfile.TemporaryDirectory() as tmpdir:
-        repo_path = Path(tmpdir) / args.repo
+        repo_path = Path(tmpdir) / repo
 
         # Clone repository using gh CLI (with git fallback)
-        print(f"\nCloning {args.owner}/{args.repo}...")
-        if not clone_repository(args.owner, args.repo, repo_path):
+        print(f"Cloning {owner}/{repo}...")
+        if not clone_repository(owner, repo, repo_path):
             print("Failed to clone repository")
             return 1
 
         # Find renovate config
         config_path = find_renovate_config(repo_path)
         if not config_path:
-            print("\nError: No renovate configuration file found in the repository")
+            print(f"\nError: No renovate configuration file found in {owner}/{repo}")
             print("Looked for: renovate.json, .github/renovate.json, .gitlab/renovate.json, .renovaterc.json, .renovaterc")
             return 1
 
@@ -254,7 +273,7 @@ def main():
 
         # Add preset to config
         print("\nUpdating renovate configuration...")
-        changes_made = add_preset_to_config(config_path, args.preset)
+        changes_made = add_preset_to_config(config_path, preset_ref)
 
         if not changes_made:
             print("\nNo changes needed. Preset already configured or no changes made.")
@@ -280,20 +299,73 @@ def main():
             return 1
 
         # Create PR
-        if not args.no_pr:
+        if not no_pr:
             if gh_available:
                 print("\nCreating pull request...")
-                create_pr_with_gh(repo_path, args.owner, args.repo, default_branch)
+                create_pr_with_gh(repo_path, owner, repo, default_branch)
             else:
                 print(f"\nBranch {BRANCH_NAME} pushed successfully.")
                 print(f"⚠ Cannot create PR: {gh_error}")
-                print(f"Create a PR manually at: https://github.com/{args.owner}/{args.repo}/compare/{default_branch}...{BRANCH_NAME}")
+                print(f"Create a PR manually at: https://github.com/{owner}/{repo}/compare/{default_branch}...{BRANCH_NAME}")
         else:
             print(f"\nBranch {BRANCH_NAME} pushed successfully.")
-            print(f"Create a PR at: https://github.com/{args.owner}/{args.repo}/compare/{default_branch}...{BRANCH_NAME}")
+            print(f"Create a PR at: https://github.com/{owner}/{repo}/compare/{default_branch}...{BRANCH_NAME}")
 
-        print("\n✓ Done!")
+        print("\n✓ Done with repository!")
         return 0
+
+
+def main():
+    """Main entry point for the CLI."""
+    parser = argparse.ArgumentParser(
+        description='Add renovate-config preset to a GitHub repository'
+    )
+    parser.add_argument('owner', help='GitHub repository owner')
+    parser.add_argument('repo', nargs='?', help='GitHub repository name (optional). If not provided, applies to all repositories of the owner.')
+    parser.add_argument('--preset', default=PRESET_REF, help=f'Preset reference (default: {PRESET_REF})')
+    parser.add_argument('--no-pr', action='store_true', help='Do not create a PR, just push the branch')
+    parser.add_argument('--include-forks', action='store_true', help='Include forked repositories when processing all repos')
+
+    args = parser.parse_args()
+
+    # Check gh CLI availability (warn if not available, but don't fail)
+    gh_available, gh_error = check_gh_cli()
+    if not gh_available:
+        print(f"⚠ Warning: {gh_error}")
+        if not args.no_pr:
+            print("  PR creation will not be available. Use --no-pr to suppress this warning.\n")
+
+    if args.repo:
+        # Process single repository
+        return process_repository(args.owner, args.repo, args.preset, args.no_pr, gh_available, gh_error)
+    else:
+        # Process all repositories
+        if not gh_available:
+            print(f"Error: {gh_error}")
+            print("gh CLI is required to fetch repositories when no repository is specified.")
+            return 1
+
+        print(f"No repository specified. Fetching all repositories for {args.owner}...")
+        repos = get_repositories(args.owner, args.include_forks)
+
+        if not repos:
+            print(f"No repositories found for {args.owner} or error fetching them.")
+            return 1
+
+        print(f"Found {len(repos)} repositories: {', '.join(repos)}")
+
+        failures = 0
+        for repo in repos:
+            result = process_repository(args.owner, repo, args.preset, args.no_pr, gh_available, gh_error)
+            if result != 0:
+                failures += 1
+
+        if failures > 0:
+            print(f"\nFinished with {failures} failures out of {len(repos)} repositories.")
+            return 1
+        else:
+            print(f"\nSuccessfully processed all {len(repos)} repositories.")
+            return 0
 
 
 if __name__ == '__main__':
