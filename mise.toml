@@ -5,7 +5,11 @@ LOG_LEVEL = "debug"
 "aqua:nodejs/node" = "24.11.1"
 uv = "0.9.11"
 
+[tasks.install]
+run = "uv sync"
+
 [tasks.test]
+depends = ["install"]
 run = "uv run pytest"
 env = { PYTHONPATH = "src" }
 
