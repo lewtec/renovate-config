@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
@@ -37,12 +39,16 @@ func runCommand(dir string, name string, args ...string) (string, error) {
 	if dir != "" {
 		cmd.Dir = dir
 	}
-	fmt.Printf("Running: %s %s\n", name, strings.Join(args, " "))
+	slog.Debug("Running command", "command", name, "args", args)
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(output), err
+	outStr := string(output)
+	if outStr != "" {
+		slog.Debug("Command output", "output", outStr)
 	}
-	return string(output), nil
+	if err != nil {
+		return outStr, err
+	}
+	return outStr, nil
 }
 
 func findRenovateConfig(repoPath string) string {
@@ -57,7 +63,7 @@ func findRenovateConfig(repoPath string) string {
 	for _, loc := range possibleLocations {
 		path := filepath.Join(repoPath, loc)
 		if _, err := os.Stat(path); err == nil {
-			fmt.Printf("Found renovate config at: %s\n", path)
+			slog.Info("Found renovate config", "path", path)
 			return path
 		}
 	}
@@ -88,7 +94,7 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 
 	var config map[string]interface{}
 	if err := json.Unmarshal(contentBytes, &config); err != nil {
-		fmt.Printf("Error parsing JSON: %v\n", err)
+		slog.Error("Error parsing JSON", "error", err)
 		return false, err
 	}
 
@@ -114,12 +120,12 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 
 	if foundIndex != -1 {
 		if foundIndex == len(extends)-1 {
-			fmt.Printf("Preset %s already exists at the end of extends\n", presetRef)
+			slog.Info("Preset already exists at the end of extends", "preset", presetRef)
 			return false, nil
 		}
 		// Remove it to append at end
 		extends = append(extends[:foundIndex], extends[foundIndex+1:]...)
-		fmt.Printf("Moving %s to the end of extends array\n", presetRef)
+		slog.Info("Moving preset to the end of extends array", "preset", presetRef)
 	}
 
 	extends = append(extends, presetRef)
@@ -143,7 +149,7 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 		return false, err
 	}
 
-	fmt.Printf("Added %s to extends array\n", presetRef)
+	slog.Info("Added preset to extends array", "preset", presetRef)
 	return true, nil
 }
 
@@ -176,10 +182,11 @@ func checkGhCli() (bool, string) {
 func cloneRepository(owner, repo, destination string) bool {
 	_, err := runCommand("", "gh", "repo", "clone", fmt.Sprintf("%s/%s", owner, repo), destination)
 	if err != nil {
-		fmt.Printf("Error cloning with gh: %v\nFallback to git clone...\n", err)
+		slog.Warn("Error cloning with gh", "error", err)
+		slog.Info("Fallback to git clone")
 		_, err = runCommand("", "git", "clone", fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), destination)
 		if err != nil {
-			fmt.Printf("Error cloning with git: %v\n", err)
+			slog.Error("Error cloning with git", "error", err)
 			return false
 		}
 	}
@@ -195,11 +202,11 @@ func createPrWithGh(repoPath, owner, repo, baseBranch string) bool {
 		"--head", branchName,
 	)
 	if err != nil {
-		fmt.Printf("Error creating PR: %v\n%s\n", err, output)
-		fmt.Printf("\nBranch '%s' has been pushed. Create PR manually.\n", branchName)
+		slog.Error("Error creating PR", "error", err, "output", output)
+		slog.Info("Branch pushed. Create PR manually", "branch", branchName)
 		return false
 	}
-	fmt.Printf("\n✓ Pull request created successfully!\n%s\n", output)
+	slog.Info("Pull request created successfully", "output", output)
 	return true
 }
 
@@ -209,7 +216,7 @@ type ghRepo struct {
 }
 
 func getRepositories(owner string, includeForks bool) ([]string, error) {
-	fmt.Printf("Fetching repositories for %s...\n", owner)
+	slog.Info("Fetching repositories", "owner", owner)
 	output, err := runCommand("", "gh", "repo", "list", owner, "--json", "name,isFork", "--limit", "1000", "--no-archived")
 	if err != nil {
 		return nil, err
@@ -231,83 +238,89 @@ func getRepositories(owner string, includeForks bool) ([]string, error) {
 }
 
 func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable bool, ghError string) int {
-	fmt.Printf("\n%s\nProcessing repository: %s/%s\n%s\n\n", strings.Repeat("=", 50), owner, repo, strings.Repeat("=", 50))
+	slog.Info("Processing repository", "repo", fmt.Sprintf("%s/%s", owner, repo))
 
 	tmpDir, err := os.MkdirTemp("", "renovate-cli-*")
 	if err != nil {
-		fmt.Printf("Error creating temp dir: %v\n", err)
+		slog.Error("Error creating temp dir", "error", err)
 		return 1
 	}
 	defer os.RemoveAll(tmpDir)
 
 	repoPath := filepath.Join(tmpDir, repo)
 
-	fmt.Printf("Cloning %s/%s...\n", owner, repo)
+	slog.Info("Cloning repository", "repo", fmt.Sprintf("%s/%s", owner, repo))
 	if !cloneRepository(owner, repo, repoPath) {
 		return 1
 	}
 
 	configPath := findRenovateConfig(repoPath)
 	if configPath == "" {
-		fmt.Printf("\nError: No renovate configuration file found in %s/%s\n", owner, repo)
+		slog.Error("No renovate configuration file found", "repo", fmt.Sprintf("%s/%s", owner, repo))
 		return 1
 	}
 
 	defaultBranch := getDefaultBranch(repoPath)
-	fmt.Printf("Default branch: %s\n", defaultBranch)
+	slog.Info("Default branch detected", "branch", defaultBranch)
 
-	fmt.Printf("\nCreating branch %s...\n", branchName)
+	slog.Info("Creating branch", "branch", branchName)
 	if _, err := runCommand(repoPath, "git", "checkout", "-b", branchName); err != nil {
-		fmt.Printf("Error creating branch: %v\n", err)
+		slog.Error("Error creating branch", "error", err)
 		return 1
 	}
 
-	fmt.Println("\nUpdating renovate configuration...")
+	slog.Info("Updating renovate configuration")
 	changesMade, err := addPresetToConfig(configPath, presetRef)
 	if err != nil {
-		fmt.Printf("Error updating config: %v\n", err)
+		slog.Error("Error updating config", "error", err)
 		return 1
 	}
 
 	if !changesMade {
-		fmt.Println("\nNo changes needed.")
+		slog.Info("No changes needed")
 		return 0
 	}
 
-	fmt.Println("\nChanges made:")
+	slog.Info("Changes made")
 	out, _ := runCommand(repoPath, "git", "diff", filepath.Base(configPath))
-	fmt.Println(out)
+	if out != "" {
+		slog.Debug("Git diff", "diff", out)
+	}
 
-	fmt.Println("\nCommitting changes...")
+	slog.Info("Committing changes")
 	runCommand(repoPath, "git", "add", configPath)
 	runCommand(repoPath, "git", "commit", "-m", commitMessage)
 
 	// Delete remote branch if it exists to avoid conflicts
-	fmt.Println("\nChecking if remote branch exists...")
+	slog.Info("Checking if remote branch exists")
 	runCommand(repoPath, "git", "push", "origin", "--delete", branchName)
 
-	fmt.Printf("\nPushing branch %s...\n", branchName)
+	slog.Info("Pushing branch", "branch", branchName)
 	if output, err := runCommand(repoPath, "git", "push", "-u", "origin", branchName); err != nil {
-		fmt.Printf("Error pushing branch: %v\n%s\n", err, output)
+		slog.Error("Error pushing branch", "error", err, "output", output)
 		return 1
 	}
 
 	if !noPr {
 		if ghAvailable {
-			fmt.Println("\nCreating pull request...")
+			slog.Info("Creating pull request")
 			createPrWithGh(repoPath, owner, repo, defaultBranch)
 		} else {
-			fmt.Printf("\nBranch %s pushed. Cannot create PR: %s\n", branchName, ghError)
+			slog.Warn("Cannot create PR", "reason", ghError)
+			slog.Info("Branch pushed successfully", "branch", branchName)
 		}
 	} else {
-		fmt.Printf("\nBranch %s pushed successfully.\n", branchName)
+		slog.Info("Branch pushed successfully", "branch", branchName)
 	}
 
-	fmt.Println("\n✓ Done with repository!")
+	slog.Info("Done with repository")
 	return 0
 }
 
 func main() {
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})
+	slog.SetDefault(slog.New(handler))
+
 	var rootCmd = &cobra.Command{
 		Use:   "renovate-config [owner] [repo]",
 		Short: "Add renovate-config preset to a GitHub repository",
@@ -317,10 +330,9 @@ func main() {
 
 			ghAvailable, ghError := checkGhCli()
 			if !ghAvailable {
-				fmt.Printf("⚠ Warning: %s\n", ghError)
+				slog.Warn("GitHub CLI warning", "warning", ghError)
 				if !noPr {
-					fmt.Println("  PR creation will not be available. Use --no-pr to suppress this warning.")
-					fmt.Println()
+					slog.Warn("PR creation will not be available. Use --no-pr to suppress this warning")
 				}
 			}
 
@@ -329,27 +341,30 @@ func main() {
 				os.Exit(processRepository(owner, repo, preset, noPr, ghAvailable, ghError))
 			} else {
 				if !ghAvailable {
-					fmt.Printf("Error: %s\n", ghError)
+					slog.Error("GitHub CLI not available", "error", ghError)
 					os.Exit(1)
 				}
 				repos, err := getRepositories(owner, includeForks)
 				if err != nil {
-					fmt.Printf("Error fetching repos: %v\n", err)
+					slog.Error("Error fetching repos", "error", err)
 					os.Exit(1)
 				}
-				fmt.Printf("Found %d repositories: %s\n", len(repos), strings.Join(repos, ", "))
+				slog.Info("Found repositories", "count", len(repos), "repos", strings.Join(repos, ", "))
+
+				bar := progressbar.Default(int64(len(repos)))
 
 				failures := 0
 				for _, repo := range repos {
 					if res := processRepository(owner, repo, preset, noPr, ghAvailable, ghError); res != 0 {
 						failures++
 					}
+					bar.Add(1)
 				}
 				if failures > 0 {
-					fmt.Printf("\nFinished with %d failures out of %d repositories.\n", failures, len(repos))
+					slog.Error("Finished with failures", "failures", failures, "total", len(repos))
 					os.Exit(1)
 				}
-				fmt.Printf("\nSuccessfully processed all %d repositories.\n", len(repos))
+				slog.Info("Successfully processed all repositories", "count", len(repos))
 			}
 		},
 	}
@@ -359,7 +374,7 @@ func main() {
 	rootCmd.Flags().BoolVar(&includeForks, "include-forks", false, "Include forked repositories when processing all repos")
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		slog.Error("Execution error", "error", err)
 		os.Exit(1)
 	}
 }
