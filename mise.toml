@@ -3,19 +3,16 @@ LOG_LEVEL = "debug"
 
 [tools]
 "aqua:nodejs/node" = "24.11.1"
-uv = "0.9.11"
 go = "1.23.4"
 
-[tasks.install]
-run = "uv sync --all-extras"
+[tasks.build]
+run = "go build -o renovate-config ./cmd/renovate-config"
 
 [tasks.test]
-depends = ["install"]
-run = "uv run pytest"
-env = { PYTHONPATH = "src" }
+run = "go test ./..."
 
 [tasks."test:renovate"]
 run = "npx -y renovate '--platform=local' '--repository-cache=reset'"
 
 [tasks.ci]
-depends = ["test"]
+depends = ["test", "build"]

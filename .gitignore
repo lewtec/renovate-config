@@ -16,4 +16,4 @@ htmlcov/
 venv/
 .uv/
 __pycache__
-renovate-config
+/renovate-config
