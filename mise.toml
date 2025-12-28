@@ -4,6 +4,7 @@ LOG_LEVEL = "debug"
 [tools]
 "aqua:nodejs/node" = "24.11.1"
 uv = "0.9.11"
+go = "1.23.4"
 
 [tasks.install]
 run = "uv sync --all-extras"
