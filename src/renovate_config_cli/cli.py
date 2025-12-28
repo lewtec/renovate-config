@@ -208,18 +208,25 @@ def create_pr_with_gh(repo_path: Path, owner: str, repo: str, base_branch: str) 
         return False
 
 
-def get_repositories(owner: str) -> List[str]:
+def get_repositories(owner: str, include_forks: bool = False) -> List[str]:
     """
     Get all repositories for the given owner (user or organization).
     Returns a list of repository names.
     """
     print(f"Fetching repositories for {owner}...")
     try:
-        # Fetch repos with just the name field, no limit (default limit is usually 30, so we set a high one or handle pagination)
-        # gh repo list <owner> --json name --limit 1000
-        result = run_command(['gh', 'repo', 'list', owner, '--json', 'name', '--limit', '1000', '--no-archived'])
+        # Fetch repos with name and isFork fields
+        # gh repo list <owner> --json name,isFork --limit 1000
+        result = run_command(['gh', 'repo', 'list', owner, '--json', 'name,isFork', '--limit', '1000', '--no-archived'])
         repos_json = json.loads(result.stdout)
-        return [repo['name'] for repo in repos_json]
+
+        repos = []
+        for repo in repos_json:
+            if not include_forks and repo.get('isFork', False):
+                continue
+            repos.append(repo['name'])
+
+        return repos
     except subprocess.CalledProcessError as e:
         print(f"Error fetching repositories for {owner}: {e}")
         if e.stderr:
@@ -317,6 +324,7 @@ def main():
     parser.add_argument('repo', nargs='?', help='GitHub repository name (optional). If not provided, applies to all repositories of the owner.')
     parser.add_argument('--preset', default=PRESET_REF, help=f'Preset reference (default: {PRESET_REF})')
     parser.add_argument('--no-pr', action='store_true', help='Do not create a PR, just push the branch')
+    parser.add_argument('--include-forks', action='store_true', help='Include forked repositories when processing all repos')
 
     args = parser.parse_args()
 
@@ -338,7 +346,7 @@ def main():
             return 1
 
         print(f"No repository specified. Fetching all repositories for {args.owner}...")
-        repos = get_repositories(args.owner)
+        repos = get_repositories(args.owner, args.include_forks)
 
         if not repos:
             print(f"No repositories found for {args.owner} or error fetching them.")
