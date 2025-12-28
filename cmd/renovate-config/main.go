@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -127,13 +128,16 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 	// We need to marshal with indentation
 	// Go's standard library doesn't easily support preserving exact indentation of the whole file if it's mixed,
 	// but we will use the detected indent.
-	outputBytes, err := json.MarshalIndent(config, "", indent)
-	if err != nil {
+	// Use encoder to prevent HTML escaping (e.g., > becoming \u003e)
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", indent)
+	if err := encoder.Encode(config); err != nil {
 		return false, err
 	}
 
-	// Add newline at EOF
-	outputBytes = append(outputBytes, '\n')
+	outputBytes := buf.Bytes()
 
 	if err := os.WriteFile(configPath, outputBytes, 0644); err != nil {
 		return false, err
@@ -278,9 +282,13 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 	runCommand(repoPath, "git", "add", configPath)
 	runCommand(repoPath, "git", "commit", "-m", commitMessage)
 
+	// Delete remote branch if it exists to avoid conflicts
+	fmt.Println("\nChecking if remote branch exists...")
+	runCommand(repoPath, "git", "push", "origin", "--delete", branchName)
+
 	fmt.Printf("\nPushing branch %s...\n", branchName)
-	if _, err := runCommand(repoPath, "git", "push", "-u", "origin", branchName); err != nil {
-		fmt.Printf("Error pushing branch: %v\n", err)
+	if output, err := runCommand(repoPath, "git", "push", "-u", "origin", branchName); err != nil {
+		fmt.Printf("Error pushing branch: %v\n%s\n", err, output)
 		return 1
 	}
 
