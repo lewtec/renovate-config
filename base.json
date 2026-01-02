@@ -24,6 +24,18 @@
   "nix": {
     "enabled": true
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "(^|/|\\.)mise\\.toml$"
+      ],
+      "matchStrings": [
+        "\"github:(?<packageName>[^\"]+)\"\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-releases"
+    }
+  ],
   "packageRules": [
     {
       "matchDepTypes": [
