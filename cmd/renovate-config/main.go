@@ -182,11 +182,11 @@ func checkGhCli() (bool, string) {
 }
 
 func cloneRepository(owner, repo, destination string) bool {
-	_, err := runCommand("", "gh", "repo", "clone", fmt.Sprintf("%s/%s", owner, repo), destination, "--")
+	_, err := runCommand("", "gh", "repo", "clone", fmt.Sprintf("%s/%s", owner, repo), destination)
 	if err != nil {
 		slog.Warn("Error cloning with gh", "error", err)
 		slog.Info("Fallback to git clone")
-		_, err = runCommand("", "git", "clone", fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), destination, "--")
+		_, err = runCommand("", "git", "clone", fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), destination)
 		if err != nil {
 			slog.Error("Error cloning with git", "error", err)
 			return false
@@ -319,29 +319,6 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 	return 0
 }
 
-func isValidOwner(owner string) bool {
-	// Prevents argument injection.
-	if strings.HasPrefix(owner, "-") {
-		return false
-	}
-	// GitHub username may only contain alphanumeric characters or hyphens.
-	// GitHub username cannot have multiple consecutive hyphens.
-	// GitHub username cannot begin or end with a hyphen.
-	// Length must be between 1 and 39 characters.
-	re := regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$`)
-	return re.MatchString(owner)
-}
-
-func isValidRepo(repo string) bool {
-	if strings.HasPrefix(repo, "-") {
-		return false
-	}
-	// Repository name may only contain alphanumeric characters, hyphens, underscores, or periods.
-	// Length must be between 1 and 100 characters.
-	re := regexp.MustCompile(`^[a-zA-Z0-9-_.]{1,100}$`)
-	return re.MatchString(repo)
-}
-
 func main() {
 	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})
 	slog.SetDefault(slog.New(handler))
@@ -352,10 +329,6 @@ func main() {
 		Args:  cobra.RangeArgs(1, 2),
 		Run: func(cmd *cobra.Command, args []string) {
 			owner := args[0]
-			if !isValidOwner(owner) {
-				slog.Error("Invalid owner format")
-				os.Exit(1)
-			}
 
 			ghAvailable, ghError := checkGhCli()
 			if !ghAvailable {
@@ -367,10 +340,6 @@ func main() {
 
 			if len(args) == 2 {
 				repo := args[1]
-				if !isValidRepo(repo) {
-					slog.Error("Invalid repo format")
-					os.Exit(1)
-				}
 				os.Exit(processRepository(owner, repo, preset, noPr, ghAvailable, ghError))
 			} else {
 				if !ghAvailable {

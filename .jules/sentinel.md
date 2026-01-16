@@ -1,7 +1,0 @@
-## 2024-08-01 - Command Injection Vulnerability in Go CLI
-
-**Vulnerability:** A command injection vulnerability was identified in the Go CLI tool (`cmd/renovate-config/main.go`). The `owner` and `repo` arguments, derived from user input, were directly used to construct `git` and `gh` command-line arguments without proper sanitization. This flaw allowed for the injection of arbitrary command-line flags, creating a significant security risk. For example, a specially crafted repository name like `--upload-pack=/path/to/malicious/script` could be interpreted by `git clone` as an option, leading to arbitrary command execution.
-
-**Learning:** The vulnerability existed because of a failure to treat user-supplied input as untrusted. The root cause was the direct concatenation of this input into system commands, a classic injection flaw. The absence of input validation and defense-in-depth measures, such as the `--` separator to distinguish arguments from options, compounded the issue.
-
-**Prevention:** To prevent similar vulnerabilities, all user-provided input must be rigorously validated against a strict allowlist of characters and patterns before being used in commands. Additionally, as a best practice, the `--` separator should be used in shell commands to clearly demarcate the end of options and the beginning of positional arguments, providing a crucial layer of defense against injection attacks. Future development should prioritize a security-first mindset, assuming all external input is malicious until proven otherwise.
