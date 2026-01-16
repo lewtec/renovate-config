@@ -14,65 +14,57 @@ To use this preset in your repository, add it to your `renovate.json`:
 
 ## Automated Setup Script
 
-Use the `renovate-config` CLI tool to automatically add this preset to any GitHub repository.
+Use the `lewtec-renovate-config` CLI tool to automatically add this preset to any GitHub repository.
 
 ### Installation
 
-#### Using UV (recommended)
-
+You can install the CLI using `go install`:
 ```bash
-# Install UV if you don't have it
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install the CLI tool
-uv tool install git+https://github.com/lewtec/renovate-config.git
-
-# Or for development
-uv pip install -e .
-```
-
-#### Using pip
-
-```bash
-pip install git+https://github.com/lewtec/renovate-config.git
+go install github.com/lewtec/renovate-config/cmd/lewtec-renovate-config@latest
 ```
 
 ### Prerequisites
 
-- Python 3.8+
+- Go 1.23+
 - Git
-- GitHub CLI (`gh`) - optional, for creating PRs automatically
+- GitHub CLI (`gh`)
 
 ### Usage
 
+The CLI can be used to update a single repository or all repositories in an organization.
+
+#### Single Repository
+
 ```bash
-renovate-config <owner> <repo>
+lewtec-renovate-config <owner> <repo>
 ```
 
 **Example:**
 ```bash
-renovate-config myorg myrepo
+lewtec-renovate-config myorg myrepo
 ```
 
 This will:
-1. Clone the target repository
-2. Find the `renovate.json` file
-3. Add the preset to the `extends` array (preserving existing formatting)
-4. Create a new branch
-5. Commit the changes
-6. Push the branch
-7. Create a Pull Request (if `gh` CLI is available)
+1. Clone the target repository.
+2. Find the `renovate.json` file.
+3. Add the preset to the `extends` array.
+4. Create a new branch (`chore/add-renovate-config-preset`).
+5. Commit and push the changes.
+6. Create a Pull Request (if `gh` CLI is available).
+
+#### Bulk Update
+
+To update all repositories for an owner (organization), omit the `repo` argument.
+
+```bash
+lewtec-renovate-config <owner>
+```
 
 ### Options
 
-- `--preset` - Custom preset reference (default: `github>lewtec/renovate-config:base`)
-- `--no-pr` - Skip PR creation, only push the branch
-
-### Example with custom preset
-
-```bash
-renovate-config myorg myrepo --preset "github>lewtec/renovate-config:custom"
-```
+- `--preset <ref>`: Custom preset reference (default: `github>lewtec/renovate-config:base`).
+- `--no-pr`: Skip PR creation, only push the branch.
+- `--include-forks`: Include forked repositories during bulk updates.
 
 ### Development
 
@@ -81,14 +73,14 @@ renovate-config myorg myrepo --preset "github>lewtec/renovate-config:custom"
 git clone https://github.com/lewtec/renovate-config.git
 cd renovate-config
 
-# Install with UV
-uv pip install -e ".[dev]"
+# Build the binary
+mise run build
 
 # Run tests
-uv run pytest
+mise run test
 
-# Or run directly
-python -m renovate_config_cli.cli <owner> <repo>
+# Run directly
+go run ./cmd/lewtec-renovate-config <owner> <repo>
 ```
 
 ## Presets
