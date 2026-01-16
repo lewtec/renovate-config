@@ -14,13 +14,13 @@ To use this preset in your repository, add it to your `renovate.json`:
 
 ## Automated Setup Script
 
-Use the `renovate-config` CLI tool to automatically add this preset to any GitHub repository.
+Use the `lewtec-renovate-config` CLI tool to automatically add this preset to any GitHub repository.
 
 ### Installation
 
 You can install the CLI using `go install`:
 ```bash
-go install github.com/lewtec/renovate-config/cmd/renovate-config@latest
+go install github.com/lewtec/renovate-config/cmd/lewtec-renovate-config@latest
 ```
 
 ### Prerequisites
@@ -36,12 +36,12 @@ The CLI can be used to update a single repository or all repositories in an orga
 #### Single Repository
 
 ```bash
-renovate-config <owner> <repo>
+lewtec-renovate-config <owner> <repo>
 ```
 
 **Example:**
 ```bash
-renovate-config myorg myrepo
+lewtec-renovate-config myorg myrepo
 ```
 
 This will:
@@ -57,7 +57,7 @@ This will:
 To update all repositories for an owner (organization), omit the `repo` argument.
 
 ```bash
-renovate-config <owner>
+lewtec-renovate-config <owner>
 ```
 
 ### Options
@@ -80,7 +80,7 @@ mise run build
 mise run test
 
 # Run directly
-go run ./cmd/renovate-config <owner> <repo>
+go run ./cmd/lewtec-renovate-config <owner> <repo>
 ```
 
 ## Presets
