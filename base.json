@@ -137,6 +137,14 @@
       ],
       "groupName": "Node.js version"
     },
+    {
+      "description": "Group Node.js updates with @types/node",
+      "matchDatasources": [ "npm" ],
+      "matchPackageNames": [
+        "@types/node"
+      ],
+      "groupName": "Node.js version"
+    },
     // Migrate node to aqua:nodejs/node in mise.toml
     {
       "description": "Migrate mise node to aqua:nodejs/node (uses official binary instead of building from source)",
@@ -165,28 +173,6 @@
         "patch"
       ],
       "automerge": true
-    },
-    {
-      "matchPackageNames": [
-        "elgohr/Github-Release-Action"
-      ],
-      "allowedVersions": "v5" // Ideally everything should use bare gh commands
-    },
-    // https://github.com/peter-evans/create-pull-request/issues/4228
-    {
-      "matchPackageNames": [
-        "actions/checkout"
-      ],
-      "allowedVersions": "<6.0.0"
-    },
-    {
-      "matchPackageNames": [
-        "actions/checkout"
-      ],
-      "matchCurrentVersion": "v6",
-      "groupName": "downgrade actions/checkout to v5",
-      "overridePackageName": "actions/checkout",
-      "replacementVersion": "v5.0.1"
     }
   ]
 }
