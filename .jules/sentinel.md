@@ -1,0 +1,3 @@
+# Sentinel's Journal
+
+## 2026-01-17 - [CRITICAL] Fix Path Traversal & Argument Injection **Vulnerability:** Identified that user-supplied `owner` and `repo` arguments were used directly in `filepath.Join` and shell commands, allowing for path traversal (`../../`) and potential argument injection. **Learning:** Go's `filepath.Join` cleans paths but does not prevent traversal out of the root if inputs contain `..`. Trusting CLI arguments without validation is a security risk. **Prevention:** Implemented strict input validation allowing only alphanumeric characters, underscores, dots, and hyphens.
