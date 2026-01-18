@@ -85,6 +85,16 @@ func detectIndentation(content string) string {
 	return "  "
 }
 
+func normalizeExtends(val interface{}) []interface{} {
+	if list, ok := val.([]interface{}); ok {
+		return list
+	}
+	if str, ok := val.(string); ok {
+		return []interface{}{str}
+	}
+	return []interface{}{}
+}
+
 func addPresetToConfig(configPath, presetRef string) (bool, error) {
 	contentBytes, err := os.ReadFile(configPath)
 	if err != nil {
@@ -100,16 +110,7 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 		return false, err
 	}
 
-	var extends []interface{}
-	if val, ok := config["extends"]; ok {
-		if list, ok := val.([]interface{}); ok {
-			extends = list
-		} else if str, ok := val.(string); ok {
-			extends = []interface{}{str}
-		}
-	} else {
-		extends = []interface{}{}
-	}
+	extends := normalizeExtends(config["extends"])
 
 	// Check if preset already exists
 	foundIndex := -1

@@ -7,6 +7,49 @@ import (
 	"testing"
 )
 
+func TestNormalizeExtends(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected []string
+	}{
+		{
+			name:     "Nil input",
+			input:    nil,
+			expected: []string{},
+		},
+		{
+			name:     "String input",
+			input:    "foo",
+			expected: []string{"foo"},
+		},
+		{
+			name:     "List input",
+			input:    []interface{}{"foo", "bar"},
+			expected: []string{"foo", "bar"},
+		},
+		{
+			name:     "Empty list input",
+			input:    []interface{}{},
+			expected: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := normalizeExtends(tt.input)
+			if len(result) != len(tt.expected) {
+				t.Errorf("expected length %d, got %d", len(tt.expected), len(result))
+			}
+			for i, v := range result {
+				if s, ok := v.(string); !ok || s != tt.expected[i] {
+					t.Errorf("expected element %d to be %s, got %v", i, tt.expected[i], v)
+				}
+			}
+		})
+	}
+}
+
 func TestAddPresetToConfig(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "renovate-test-*")
 	if err != nil {
