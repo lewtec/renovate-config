@@ -85,21 +85,7 @@ func detectIndentation(content string) string {
 	return "  "
 }
 
-func addPresetToConfig(configPath, presetRef string) (bool, error) {
-	contentBytes, err := os.ReadFile(configPath)
-	if err != nil {
-		return false, err
-	}
-	content := string(contentBytes)
-
-	indent := detectIndentation(content)
-
-	var config map[string]interface{}
-	if err := json.Unmarshal(contentBytes, &config); err != nil {
-		slog.Error("Error parsing JSON", "error", err)
-		return false, err
-	}
-
+func updateConfigMap(config map[string]interface{}, presetRef string) bool {
 	var extends []interface{}
 	if val, ok := config["extends"]; ok {
 		if list, ok := val.([]interface{}); ok {
@@ -123,7 +109,7 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 	if foundIndex != -1 {
 		if foundIndex == len(extends)-1 {
 			slog.Info("Preset already exists at the end of extends", "preset", presetRef)
-			return false, nil
+			return false
 		}
 		// Remove it to append at end
 		extends = append(extends[:foundIndex], extends[foundIndex+1:]...)
@@ -132,6 +118,28 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 
 	extends = append(extends, presetRef)
 	config["extends"] = extends
+	return true
+}
+
+func addPresetToConfig(configPath, presetRef string) (bool, error) {
+	contentBytes, err := os.ReadFile(configPath)
+	if err != nil {
+		return false, err
+	}
+	content := string(contentBytes)
+
+	indent := detectIndentation(content)
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(contentBytes, &config); err != nil {
+		slog.Error("Error parsing JSON", "error", err)
+		return false, err
+	}
+
+	changed := updateConfigMap(config, presetRef)
+	if !changed {
+		return false, nil
+	}
 
 	// We need to marshal with indentation
 	// Go's standard library doesn't easily support preserving exact indentation of the whole file if it's mixed,
