@@ -4,9 +4,11 @@ LOG_LEVEL = "debug"
 [tools]
 "aqua:nodejs/node" = "24.11.1"
 go = "1.23.4"
+golangci-lint = "latest"
+dprint = "latest"
 
 [tasks.build]
-run = "go build -o renovate-config ./cmd/renovate-config"
+run = "go build -o renovate-config ./cmd/lewtec-renovate-config"
 
 [tasks.test]
 run = "go test ./..."
@@ -14,5 +16,20 @@ run = "go test ./..."
 [tasks."test:renovate"]
 run = "npx -y renovate '--platform=local' '--repository-cache=reset'"
 
+[tasks."lint:go"]
+run = "golangci-lint run ./..."
+
+[tasks."fmt:go"]
+run = "gofmt -w -s ."
+
+[tasks."fmt:dprint"]
+run = "dprint fmt"
+
+[tasks.lint]
+depends = ["lint:*"]
+
+[tasks.fmt]
+depends = ["fmt:*"]
+
 [tasks.ci]
-depends = ["test", "build"]
+depends = ["lint", "test", "build"]

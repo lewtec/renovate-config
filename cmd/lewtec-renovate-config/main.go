@@ -247,7 +247,9 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 		slog.Error("Error creating temp dir", "error", err)
 		return 1
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
 
 	repoPath := filepath.Join(tmpDir, repo)
 
@@ -290,12 +292,12 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 	}
 
 	slog.Info("Committing changes")
-	runCommand(repoPath, "git", "add", configPath)
-	runCommand(repoPath, "git", "commit", "-m", commitMessage)
+	_, _ = runCommand(repoPath, "git", "add", configPath)
+	_, _ = runCommand(repoPath, "git", "commit", "-m", commitMessage)
 
 	// Delete remote branch if it exists to avoid conflicts
 	slog.Info("Checking if remote branch exists")
-	runCommand(repoPath, "git", "push", "origin", "--delete", branchName)
+	_, _ = runCommand(repoPath, "git", "push", "origin", "--delete", branchName)
 
 	slog.Info("Pushing branch", "branch", branchName)
 	if output, err := runCommand(repoPath, "git", "push", "-u", "origin", branchName); err != nil {
@@ -360,7 +362,7 @@ func main() {
 					if res := processRepository(owner, repo, preset, noPr, ghAvailable, ghError); res != 0 {
 						failures++
 					}
-					bar.Add(1)
+					_ = bar.Add(1)
 				}
 				if failures > 0 {
 					slog.Error("Finished with failures", "failures", failures, "total", len(repos))

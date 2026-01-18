@@ -139,7 +139,7 @@
     },
     {
       "description": "Group Node.js updates with @types/node",
-      "matchDatasources": [ "npm" ],
+      "matchDatasources": ["npm"],
       "matchPackageNames": [
         "@types/node"
       ],
