@@ -7,6 +7,32 @@ import (
 	"testing"
 )
 
+func TestIsValidInput(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"valid-name", true},
+		{"valid_name", true},
+		{"valid.name", true},
+		{"ValidName123", true},
+		{".", false},
+		{"..", false},
+		{"../foo", false},
+		{"foo/bar", false},
+		{"foo;bar", false},
+		{"-flag", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			if got := isValidInput(tt.input); got != tt.expected {
+				t.Errorf("isValidInput(%q) = %v; want %v", tt.input, got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestAddPresetToConfig(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "renovate-test-*")
 	if err != nil {
