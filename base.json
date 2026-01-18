@@ -14,6 +14,7 @@
     "helpers:pinGitHubActionDigests",
     "security:openssf-scorecard",
     "workarounds:all",
+    "workarounds:typesNodeVersioning",
     ":automergeRequireAllStatusChecks",
     "schedule:daily"
   ],
