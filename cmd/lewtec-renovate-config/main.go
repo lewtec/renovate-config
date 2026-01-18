@@ -239,6 +239,13 @@ func getRepositories(owner string, includeForks bool) ([]string, error) {
 	return names, nil
 }
 
+func validateInput(input string) error {
+	if !regexp.MustCompile(`^[a-zA-Z0-9_.-]+$`).MatchString(input) {
+		return fmt.Errorf("invalid input %q: only alphanumeric characters, underscores, hyphens, and dots are allowed", input)
+	}
+	return nil
+}
+
 func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable bool, ghError string) int {
 	slog.Info("Processing repository", "repo", fmt.Sprintf("%s/%s", owner, repo))
 
@@ -329,6 +336,10 @@ func main() {
 		Args:  cobra.RangeArgs(1, 2),
 		Run: func(cmd *cobra.Command, args []string) {
 			owner := args[0]
+			if err := validateInput(owner); err != nil {
+				slog.Error("Invalid owner argument", "error", err)
+				os.Exit(1)
+			}
 
 			ghAvailable, ghError := checkGhCli()
 			if !ghAvailable {
@@ -340,6 +351,10 @@ func main() {
 
 			if len(args) == 2 {
 				repo := args[1]
+				if err := validateInput(repo); err != nil {
+					slog.Error("Invalid repo argument", "error", err)
+					os.Exit(1)
+				}
 				os.Exit(processRepository(owner, repo, preset, noPr, ghAvailable, ghError))
 			} else {
 				if !ghAvailable {
