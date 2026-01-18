@@ -4,8 +4,8 @@ LOG_LEVEL = "debug"
 [tools]
 "aqua:nodejs/node" = "24.11.1"
 go = "1.23.4"
-golangci-lint = "latest"
-dprint = "latest"
+golangci-lint = "1.63.4"
+dprint = "0.45.0"
 
 [tasks.build]
 run = "go build -o renovate-config ./cmd/lewtec-renovate-config"
