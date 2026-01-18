@@ -7,6 +7,37 @@ import (
 	"testing"
 )
 
+func TestValidateInput(t *testing.T) {
+	tests := []struct {
+		input    string
+		isValid  bool
+	}{
+		{"valid-repo", true},
+		{"valid_repo", true},
+		{"valid.repo", true},
+		{"ValidRepo123", true},
+		{"invalid/repo", false},
+		{"invalid\\repo", false},
+		{"invalid repo", false},
+		{"../invalid", false},
+		{";rm -rf /", false},
+		{".", false},
+		{"..", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			err := validateInput(tt.input)
+			if tt.isValid && err != nil {
+				t.Errorf("expected '%s' to be valid, got error: %v", tt.input, err)
+			}
+			if !tt.isValid && err == nil {
+				t.Errorf("expected '%s' to be invalid, but got no error", tt.input)
+			}
+		})
+	}
+}
+
 func TestAddPresetToConfig(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "renovate-test-*")
 	if err != nil {

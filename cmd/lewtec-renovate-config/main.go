@@ -85,6 +85,23 @@ func detectIndentation(content string) string {
 	return "  "
 }
 
+func validateInput(input string) error {
+	// Allow alphanumeric, underscores, hyphens, and dots.
+	// This covers GitHub usernames and repository names.
+	// It prevents path traversal characters like "/" or "\".
+	matched, err := regexp.MatchString(`^[a-zA-Z0-9_.-]+$`, input)
+	if err != nil {
+		return err
+	}
+	if !matched {
+		return fmt.Errorf("invalid input '%s': must contain only alphanumeric characters, underscores, hyphens, and dots", input)
+	}
+	if input == "." || input == ".." {
+		return fmt.Errorf("invalid input '%s': cannot be '.' or '..'", input)
+	}
+	return nil
+}
+
 func addPresetToConfig(configPath, presetRef string) (bool, error) {
 	contentBytes, err := os.ReadFile(configPath)
 	if err != nil {
@@ -329,6 +346,10 @@ func main() {
 		Args:  cobra.RangeArgs(1, 2),
 		Run: func(cmd *cobra.Command, args []string) {
 			owner := args[0]
+			if err := validateInput(owner); err != nil {
+				slog.Error("Invalid owner", "error", err)
+				os.Exit(1)
+			}
 
 			ghAvailable, ghError := checkGhCli()
 			if !ghAvailable {
@@ -340,6 +361,10 @@ func main() {
 
 			if len(args) == 2 {
 				repo := args[1]
+				if err := validateInput(repo); err != nil {
+					slog.Error("Invalid repo", "error", err)
+					os.Exit(1)
+				}
 				os.Exit(processRepository(owner, repo, preset, noPr, ghAvailable, ghError))
 			} else {
 				if !ghAvailable {
