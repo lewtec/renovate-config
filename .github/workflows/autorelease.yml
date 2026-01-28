@@ -1,0 +1,46 @@
+name: autorelease
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: mise run install
+
+      - name: Run codegen
+        run: mise run codegen
+
+      - name: Create PR if changes exist
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update generated code"
+          title: "chore: update generated code"
+          body: "This PR updates generated code."
+          branch: "chore/update-codegen"
+
+      - name: Run CI
+        run: mise run ci
+
+      - name: Release
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            gh release create ${GITHUB_REF#refs/tags/} --generate-notes
+          fi
