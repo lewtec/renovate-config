@@ -16,8 +16,11 @@ import (
 )
 
 var (
-	preset       string
-	noPr         bool
+	/** The preset to add to the configuration (e.g., "github>lewtec/renovate-config:base"). */
+	preset string
+	/** If true, the CLI will push the branch but skip creating a Pull Request. */
+	noPr bool
+	/** If true, include forked repositories when processing all repositories for an owner. */
 	includeForks bool
 )
 
@@ -118,6 +121,8 @@ func detectIndentation(content string) string {
  *    - If present elsewhere: Moves it to the end to ensure it takes precedence.
  * 4. Appends the preset if missing.
  * 5. Writes the file back, attempting to preserve the original indentation.
+ *
+ * Note: This function reformats the entire JSON file using the detected indentation, which may alter the style of the original file.
  *
  * Returns true if the file was modified, false otherwise.
  */
@@ -276,6 +281,10 @@ func createPrWithGh(repoPath, owner, repo, baseBranch string) bool {
 	return true
 }
 
+/**
+ * Represents a subset of repository fields returned by the GitHub CLI JSON output.
+ * Used for unmarshaling `gh repo list` results.
+ */
 type ghRepo struct {
 	Name   string `json:"name"`
 	IsFork bool   `json:"isFork"`
@@ -321,6 +330,8 @@ func getRepositories(owner string, includeForks bool) ([]string, error) {
  * 4. Adds/Updates the preset in the config.
  * 5. Commits and pushes changes (if modified).
  * 6. Creates a PR (unless --no-pr is set or gh is unavailable).
+ *
+ * Note: This function force-deletes the remote branch (`git push origin --delete`) before pushing to ensure a clean state and avoid non-fast-forward errors.
  *
  * Returns 0 on success, 1 on failure.
  */
@@ -404,6 +415,13 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 	return 0
 }
 
+/**
+ * Entry point.
+ *
+ * Parses arguments to determine if running in single-repository mode
+ * or bulk-update mode (scanning an owner's repositories).
+ * Initializes the logger and handles global flags.
+ */
 func main() {
 	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})
 	slog.SetDefault(slog.New(handler))
