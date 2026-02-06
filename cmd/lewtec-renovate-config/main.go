@@ -166,7 +166,6 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 	return true, nil
 }
 
-
 /**
  * Orchestrates the update process for a single repository.
  *
@@ -231,12 +230,19 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 	}
 
 	slog.Info("Committing changes")
-	runCommand(repoPath, "git", "add", configPath)
-	runCommand(repoPath, "git", "commit", "-m", commitMessage)
+	if _, err := runCommand(repoPath, "git", "add", configPath); err != nil {
+		slog.Error("Error adding config file", "error", err)
+		return 1
+	}
+	if _, err := runCommand(repoPath, "git", "commit", "-m", commitMessage); err != nil {
+		slog.Error("Error committing changes", "error", err)
+		return 1
+	}
 
 	// Delete remote branch if it exists to avoid conflicts
 	slog.Info("Checking if remote branch exists")
-	runCommand(repoPath, "git", "push", "origin", "--delete", branchName)
+	// We ignore the error here because the branch might not exist on remote
+	_, _ = runCommand(repoPath, "git", "push", "origin", "--delete", branchName)
 
 	slog.Info("Pushing branch", "branch", branchName)
 	if output, err := runCommand(repoPath, "git", "push", "-u", "origin", branchName); err != nil {
@@ -301,7 +307,7 @@ func main() {
 					if res := processRepository(owner, repo, preset, noPr, ghAvailable, ghError); res != 0 {
 						failures++
 					}
-					bar.Add(1)
+					_ = bar.Add(1)
 				}
 				if failures > 0 {
 					slog.Error("Finished with failures", "failures", failures, "total", len(repos))

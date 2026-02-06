@@ -19,6 +19,7 @@ Use the `lewtec-renovate-config` CLI tool to automatically add this preset to an
 ### Installation
 
 You can install the CLI using `go install`:
+
 ```bash
 go install github.com/lewtec/renovate-config/cmd/lewtec-renovate-config@latest
 ```
@@ -40,11 +41,13 @@ lewtec-renovate-config <owner> <repo>
 ```
 
 **Example:**
+
 ```bash
 lewtec-renovate-config myorg myrepo
 ```
 
 This will:
+
 1. Clone the target repository.
 2. Find the `renovate.json` file.
 3. Add the preset to the `extends` array.
@@ -88,6 +91,7 @@ go run ./cmd/lewtec-renovate-config <owner> <repo>
 ### base
 
 The base preset includes:
+
 - Recommended configuration
 - Dependency dashboard
 - Vulnerability alerts
