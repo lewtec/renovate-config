@@ -16,20 +16,20 @@ import (
 
 var (
 	/**
-	 * preset defines the Renovate preset reference to add.
-	 * Defaults to "github>lewtec/renovate-config:base".
+	 * preset is the Renovate configuration preset to be applied to the target repository.
+	 * It defaults to the value of `defaultPreset` if not specified via flags.
 	 */
 	preset string
 
 	/**
-	 * noPr controls whether to skip Pull Request creation.
-	 * If true, changes are pushed to the branch but no PR is opened.
+	 * noPr indicates if the Pull Request creation step should be skipped.
+	 * When set, changes are committed and pushed to the branch, but no PR is generated.
 	 */
 	noPr bool
 
 	/**
-	 * includeForks controls whether to process forked repositories.
-	 * When scanning an owner's repositories, forks are ignored unless this is true.
+	 * includeForks allows the tool to scan and process forked repositories.
+	 * By default, forks are excluded to prevent accidental updates to upstream mirrors.
 	 */
 	includeForks bool
 )
