@@ -107,7 +107,7 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 
 	var config map[string]interface{}
 	if err := json.Unmarshal(contentBytes, &config); err != nil {
-		reportError(err, "Error parsing JSON")
+		ReportError(err, "Error parsing JSON")
 		return false, err
 	}
 
@@ -166,7 +166,6 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 	return true, nil
 }
 
-
 /**
  * Orchestrates the update process for a single repository.
  *
@@ -185,7 +184,7 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 
 	tmpDir, err := os.MkdirTemp("", "renovate-cli-*")
 	if err != nil {
-		reportError(err, "Error creating temp dir")
+		ReportError(err, "Error creating temp dir")
 		return 1
 	}
 	defer os.RemoveAll(tmpDir)
@@ -199,7 +198,7 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 
 	configPath := findRenovateConfig(repoPath)
 	if configPath == "" {
-		reportError(fmt.Errorf("config not found"), "No renovate configuration file found", "repo", fmt.Sprintf("%s/%s", owner, repo))
+		ReportError(fmt.Errorf("config not found"), "No renovate configuration file found", "repo", fmt.Sprintf("%s/%s", owner, repo))
 		return 1
 	}
 
@@ -208,14 +207,14 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 
 	slog.Info("Creating branch", "branch", branchName)
 	if _, err := runCommand(repoPath, "git", "checkout", "-b", branchName); err != nil {
-		reportError(err, "Error creating branch")
+		ReportError(err, "Error creating branch")
 		return 1
 	}
 
 	slog.Info("Updating renovate configuration")
 	changesMade, err := addPresetToConfig(configPath, presetRef)
 	if err != nil {
-		reportError(err, "Error updating config")
+		ReportError(err, "Error updating config")
 		return 1
 	}
 
@@ -227,18 +226,18 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 	slog.Info("Changes made")
 	out, err := runCommand(repoPath, "git", "diff", filepath.Base(configPath))
 	if err != nil {
-		reportError(err, "Error running git diff")
+		ReportError(err, "Error running git diff")
 	} else if out != "" {
 		slog.Debug("Git diff", "diff", out)
 	}
 
 	slog.Info("Committing changes")
 	if _, err := runCommand(repoPath, "git", "add", configPath); err != nil {
-		reportError(err, "Error adding changes")
+		ReportError(err, "Error adding changes")
 		return 1
 	}
 	if _, err := runCommand(repoPath, "git", "commit", "-m", commitMessage); err != nil {
-		reportError(err, "Error committing changes")
+		ReportError(err, "Error committing changes")
 		return 1
 	}
 
@@ -250,7 +249,7 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 
 	slog.Info("Pushing branch", "branch", branchName)
 	if output, err := runCommand(repoPath, "git", "push", "-u", "origin", branchName); err != nil {
-		reportError(err, "Error pushing branch", "output", output)
+		ReportError(err, "Error pushing branch", "output", output)
 		return 1
 	}
 
@@ -294,12 +293,12 @@ func main() {
 				os.Exit(processRepository(owner, repo, preset, noPr, ghAvailable, ghError))
 			} else {
 				if !ghAvailable {
-					reportError(fmt.Errorf(ghError), "GitHub CLI not available")
+					ReportError(fmt.Errorf(ghError), "GitHub CLI not available")
 					os.Exit(1)
 				}
 				repos, err := getRepositories(owner, includeForks)
 				if err != nil {
-					reportError(err, "Error fetching repos")
+					ReportError(err, "Error fetching repos")
 					os.Exit(1)
 				}
 				slog.Info("Found repositories", "count", len(repos), "repos", strings.Join(repos, ", "))
@@ -327,7 +326,7 @@ func main() {
 	rootCmd.Flags().BoolVar(&includeForks, "include-forks", false, "Include forked repositories when processing all repos")
 
 	if err := rootCmd.Execute(); err != nil {
-		reportError(err, "Execution error")
+		ReportError(err, "Execution error")
 		os.Exit(1)
 	}
 }

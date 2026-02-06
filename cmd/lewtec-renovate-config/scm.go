@@ -83,7 +83,7 @@ func cloneRepository(owner, repo, destination string) bool {
 		slog.Info("Fallback to git clone")
 		_, err = runCommand("", "git", "clone", fmt.Sprintf("https://github.com/%s/%s.git", owner, repo), destination)
 		if err != nil {
-			reportError(err, "Error cloning with git")
+			ReportError(err, "Error cloning with git")
 			return false
 		}
 	}
@@ -99,7 +99,7 @@ func cloneRepository(owner, repo, destination string) bool {
 func getDefaultBranch(repoPath string) string {
 	output, err := runCommand(repoPath, "git", "symbolic-ref", "refs/remotes/origin/HEAD")
 	if err != nil {
-		reportError(err, "Failed to get default branch, defaulting to main")
+		ReportError(err, "Failed to get default branch, defaulting to main")
 		return "main"
 	}
 	branch := strings.TrimSpace(output)
@@ -125,7 +125,7 @@ func createGitHubPR(repoPath, owner, repo, baseBranch, headBranch, title, body s
 		"--head", headBranch,
 	)
 	if err != nil {
-		reportError(err, "Error creating PR", "output", output)
+		ReportError(err, "Error creating PR", "output", output)
 		slog.Info("Branch pushed. Create PR manually", "branch", headBranch)
 		return false
 	}

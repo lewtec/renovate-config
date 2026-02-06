@@ -12,7 +12,7 @@ import (
  * @param msg A descriptive message.
  * @param args Additional key-value pairs for context (slog style).
  */
-func reportError(err error, msg string, args ...any) {
+func ReportError(err error, msg string, args ...any) {
 	if err == nil {
 		return
 	}
