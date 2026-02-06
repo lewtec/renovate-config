@@ -17,7 +17,9 @@ import (
 	"strings"
 )
 
-// ghRepo represents a repository in the GitHub CLI JSON output.
+/**
+ * ghRepo represents a repository in the GitHub CLI JSON output.
+ */
 type ghRepo struct {
 	Name   string `json:"name"`
 	IsFork bool   `json:"isFork"`
