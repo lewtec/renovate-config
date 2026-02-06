@@ -6,7 +6,7 @@ LOG_LEVEL = "debug"
 go = "1.23.4"
 
 [tasks.build]
-run = "go build -o renovate-config ./cmd/renovate-config"
+run = "go build -o renovate-config ./cmd/lewtec-renovate-config"
 
 [tasks.test]
 run = "go test ./..."
