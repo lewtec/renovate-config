@@ -107,7 +107,7 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 
 	var config map[string]interface{}
 	if err := json.Unmarshal(contentBytes, &config); err != nil {
-		slog.Error("Error parsing JSON", "error", err)
+		reportError(err, "Error parsing JSON")
 		return false, err
 	}
 
@@ -185,7 +185,7 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 
 	tmpDir, err := os.MkdirTemp("", "renovate-cli-*")
 	if err != nil {
-		slog.Error("Error creating temp dir", "error", err)
+		reportError(err, "Error creating temp dir")
 		return 1
 	}
 	defer os.RemoveAll(tmpDir)
@@ -199,7 +199,7 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 
 	configPath := findRenovateConfig(repoPath)
 	if configPath == "" {
-		slog.Error("No renovate configuration file found", "repo", fmt.Sprintf("%s/%s", owner, repo))
+		reportError(fmt.Errorf("config not found"), "No renovate configuration file found", "repo", fmt.Sprintf("%s/%s", owner, repo))
 		return 1
 	}
 
@@ -208,14 +208,14 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 
 	slog.Info("Creating branch", "branch", branchName)
 	if _, err := runCommand(repoPath, "git", "checkout", "-b", branchName); err != nil {
-		slog.Error("Error creating branch", "error", err)
+		reportError(err, "Error creating branch")
 		return 1
 	}
 
 	slog.Info("Updating renovate configuration")
 	changesMade, err := addPresetToConfig(configPath, presetRef)
 	if err != nil {
-		slog.Error("Error updating config", "error", err)
+		reportError(err, "Error updating config")
 		return 1
 	}
 
@@ -225,22 +225,32 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 	}
 
 	slog.Info("Changes made")
-	out, _ := runCommand(repoPath, "git", "diff", filepath.Base(configPath))
-	if out != "" {
+	out, err := runCommand(repoPath, "git", "diff", filepath.Base(configPath))
+	if err != nil {
+		reportError(err, "Error running git diff")
+	} else if out != "" {
 		slog.Debug("Git diff", "diff", out)
 	}
 
 	slog.Info("Committing changes")
-	runCommand(repoPath, "git", "add", configPath)
-	runCommand(repoPath, "git", "commit", "-m", commitMessage)
+	if _, err := runCommand(repoPath, "git", "add", configPath); err != nil {
+		reportError(err, "Error adding changes")
+		return 1
+	}
+	if _, err := runCommand(repoPath, "git", "commit", "-m", commitMessage); err != nil {
+		reportError(err, "Error committing changes")
+		return 1
+	}
 
 	// Delete remote branch if it exists to avoid conflicts
 	slog.Info("Checking if remote branch exists")
-	runCommand(repoPath, "git", "push", "origin", "--delete", branchName)
+	if _, err := runCommand(repoPath, "git", "push", "origin", "--delete", branchName); err != nil {
+		slog.Debug("Remote branch deletion failed (likely didn't exist)", "error", err)
+	}
 
 	slog.Info("Pushing branch", "branch", branchName)
 	if output, err := runCommand(repoPath, "git", "push", "-u", "origin", branchName); err != nil {
-		slog.Error("Error pushing branch", "error", err, "output", output)
+		reportError(err, "Error pushing branch", "output", output)
 		return 1
 	}
 
@@ -284,12 +294,12 @@ func main() {
 				os.Exit(processRepository(owner, repo, preset, noPr, ghAvailable, ghError))
 			} else {
 				if !ghAvailable {
-					slog.Error("GitHub CLI not available", "error", ghError)
+					reportError(fmt.Errorf(ghError), "GitHub CLI not available")
 					os.Exit(1)
 				}
 				repos, err := getRepositories(owner, includeForks)
 				if err != nil {
-					slog.Error("Error fetching repos", "error", err)
+					reportError(err, "Error fetching repos")
 					os.Exit(1)
 				}
 				slog.Info("Found repositories", "count", len(repos), "repos", strings.Join(repos, ", "))
@@ -317,7 +327,7 @@ func main() {
 	rootCmd.Flags().BoolVar(&includeForks, "include-forks", false, "Include forked repositories when processing all repos")
 
 	if err := rootCmd.Execute(); err != nil {
-		slog.Error("Execution error", "error", err)
+		reportError(err, "Execution error")
 		os.Exit(1)
 	}
 }
