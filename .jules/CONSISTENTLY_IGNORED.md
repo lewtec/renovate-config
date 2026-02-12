@@ -25,3 +25,11 @@ This file lists patterns of changes that have been consistently rejected by huma
 **- Pattern:** Adding `.github/workflows/autorelease.yml`, `.golangci.yml`, `dprint.json` or related `mise` tasks for linting/formatting/releasing.
 **- Justification:** PRs (#19, #27, #32) setting up this specific CI/CD and linter infrastructure have been consistently closed.
 **- Files Affected:** `.golangci.yml`, `dprint.json`, `.github/workflows/*`
+
+---
+
+## IGNORE: Verbose JSDoc for Simple Identifiers
+
+**- Pattern:** Using JSDoc-style block comments (`/** ... */`) for variables, constants, or simple functions where standard Go comments (`//`) suffice, or adding redundant documentation (e.g., repeating the variable name).
+**- Justification:** PRs #28 and #33 adding extensive JSDoc comments to `main.go` were rejected. The project prefers an "Essentialist" documentation style, reserving detailed block comments for complex logic or public APIs, and avoiding noise for internal CLI variables.
+**- Files Affected:** `cmd/lewtec-renovate-config/*.go`
