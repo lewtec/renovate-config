@@ -29,7 +29,7 @@ type ghRepo struct {
  * This wrapper handles:
  * - Setting the working directory.
  * - Logging the command and its output at Debug level (to avoid clutter).
- * - capturing combined stdout/stderr for error reporting.
+ * - Capturing stdout separately from stderr to avoid contamination of structured output.
  */
 func runCommand(dir string, name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
@@ -37,12 +37,15 @@ func runCommand(dir string, name string, args ...string) (string, error) {
 		cmd.Dir = dir
 	}
 	slog.Debug("Running command", "command", name, "args", args)
-	output, err := cmd.CombinedOutput()
+	output, err := cmd.Output()
 	outStr := string(output)
 	if outStr != "" {
 		slog.Debug("Command output", "output", outStr)
 	}
 	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return outStr, fmt.Errorf("%w (stderr: %s)", err, string(exitErr.Stderr))
+		}
 		return outStr, err
 	}
 	return outStr, nil
