@@ -153,9 +153,9 @@
         "mise"
       ],
       "matchPackageNames": [
-        "node"
+        "aqua:nodejs/node"
       ],
-      "replacementName": "aqua:nodejs/node",
+      "replacementName": "node",
       "replacementVersion": "auto"
     },
     {
