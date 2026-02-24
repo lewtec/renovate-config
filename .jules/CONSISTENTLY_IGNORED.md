@@ -20,11 +20,19 @@ This file lists patterns of changes that have been consistently rejected by huma
 
 ---
 
+## IGNORE: Splitting main.go into Multiple Files
+
+**- Pattern:** Extracting logic from `main.go` into new files like `config.go`, `workflow.go`, or similar.
+**- Justification:** PRs #36 and #37 proposing to split `main.go` into domain-specific files were rejected. The project favors a single-file approach for the CLI entry point and core logic, likely for simplicity and ease of navigation in a small codebase.
+**- Files Affected:** `cmd/lewtec-renovate-config/*.go`
+
+---
+
 ## IGNORE: Adding Autorelease/CI Workflows
 
 **- Pattern:** Adding `.github/workflows/autorelease.yml`, `.golangci.yml`, `dprint.json` or related `mise` tasks for linting/formatting/releasing.
 **- Justification:** PRs (#19, #27, #32) setting up this specific CI/CD and linter infrastructure have been consistently closed.
-**- Files Affected:** `.golangci.yml`, `dprint.json`, `.github/workflows/*`
+**- Files Affected:** `mise.toml`, `.golangci.yml`, `dprint.json`, `.github/workflows/*`
 
 ---
 
@@ -32,4 +40,4 @@ This file lists patterns of changes that have been consistently rejected by huma
 
 **- Pattern:** Using JSDoc-style block comments (`/** ... */`) for variables, constants, or simple functions where standard Go comments (`//`) suffice, or adding redundant documentation (e.g., repeating the variable name).
 **- Justification:** PRs #28 and #33 adding extensive JSDoc comments to `main.go` were rejected. The project prefers an "Essentialist" documentation style, reserving detailed block comments for complex logic or public APIs, and avoiding noise for internal CLI variables.
-**- Files Affected:** `cmd/lewtec-renovate-config/*.go`
+**- Files Affected:** `AGENTS.md`, `cmd/lewtec-renovate-config/*.go`
