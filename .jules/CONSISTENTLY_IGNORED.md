@@ -12,6 +12,14 @@ This file lists patterns of changes that have been consistently rejected by huma
 
 ---
 
+## IGNORE: Splitting main.go into Multiple Files
+
+**- Pattern:** Extracting logic from `main.go` into new files like `config.go`, `workflow.go`, or similar.
+**- Justification:** PRs #36 and #37 proposing to split `main.go` into domain-specific files were rejected. The project favors a single-file approach for the CLI entry point and core logic, likely for simplicity and ease of navigation in a small codebase.
+**- Files Affected:** `cmd/lewtec-renovate-config/*.go`
+
+---
+
 ## IGNORE: Extracting Logic from addPresetToConfig
 
 **- Pattern:** Refactoring `addPresetToConfig` to use helper functions like `updateConfigMap` or `normalizeExtends` to separate business logic from I/O.
