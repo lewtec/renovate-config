@@ -33,3 +33,11 @@ This file lists patterns of changes that have been consistently rejected by huma
 **- Pattern:** Using JSDoc-style block comments (`/** ... */`) for variables, constants, or simple functions where standard Go comments (`//`) suffice, or adding redundant documentation (e.g., repeating the variable name).
 **- Justification:** PRs #28 and #33 adding extensive JSDoc comments to `main.go` were rejected. The project prefers an "Essentialist" documentation style, reserving detailed block comments for complex logic or public APIs, and avoiding noise for internal CLI variables.
 **- Files Affected:** `cmd/lewtec-renovate-config/*.go`
+
+---
+
+## IGNORE: Splitting main.go into Multiple Files
+
+**- Pattern:** Extracting logic from `main.go` into new files like `config.go`, `workflow.go`, or similar.
+**- Justification:** PRs #36 and #37 proposing to split `main.go` into domain-specific files were rejected. The project favors a single-file approach for the CLI entry point and core logic, likely for simplicity and ease of navigation in a small codebase.
+**- Files Affected:** `cmd/lewtec-renovate-config/*.go`
