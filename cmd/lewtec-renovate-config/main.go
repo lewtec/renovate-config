@@ -187,7 +187,11 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 		ReportError(err, "Error creating temp dir")
 		return 1
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			ReportError(err, "Error removing temp dir")
+		}
+	}()
 
 	repoPath := filepath.Join(tmpDir, repo)
 
@@ -313,7 +317,7 @@ func main() {
 					bar.Add(1)
 				}
 				if failures > 0 {
-					slog.Error("Finished with failures", "failures", failures, "total", len(repos))
+					ReportError(fmt.Errorf("finished with %d failures", failures), "Finished with failures", "total", len(repos))
 					os.Exit(1)
 				}
 				slog.Info("Successfully processed all repositories", "count", len(repos))
