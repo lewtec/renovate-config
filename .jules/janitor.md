@@ -16,3 +16,9 @@
 **Solution:** I updated the README.md to accurately describe the current Go-based CLI. This included changing the installation instructions to use `go install`, updating prerequisites to Go, and revising the development section to use `mise` and Go commands.
 **Pattern:** Documentation must be treated as code. When a core piece of functionality is rewritten or migrated, its corresponding documentation must be updated in the same changeset to prevent confusion and maintain usability.
 - 2026-02-04: Broken build paths in task definitions must be fixed to ensure developer workflow reliability.
+
+## 2026-02-05 - Fix JSDoc retroactive violations
+**Issue:** Several functions in `errors.go`, `main.go`, and `scm.go` used JSDoc-style block comments (`/** ... */`) instead of standard Go single-line comments (`// ...`), violating the "Essentialist" documentation style and the known ignored pattern in `.jules/CONSISTENTLY_IGNORED.md`.
+**Root Cause:** JSDoc conventions were brought in by mistake and had not been cleaned up yet.
+**Solution:** Replaced all `/** ... */` block comments over functions with standard Go comments (`// ...`) that start with the name of the function.
+**Pattern:** Always use idiomatic Go comments (`//`) for function documentation and follow the 'Essentialist' philosophy, prioritizing concise communication over verbose formatting.
