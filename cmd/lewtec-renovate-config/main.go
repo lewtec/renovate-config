@@ -45,13 +45,11 @@ var renovateConfigLocations = []string{
 	".renovaterc",
 }
 
-/**
- * Locates the Renovate configuration file within a repository.
- *
- * Checks standard locations (root, .github, .gitlab) and filenames
- * (renovate.json, .renovaterc.json, etc.) in order of precedence.
- * Returns the absolute path if found, or an empty string.
- */
+// findRenovateConfig locates the Renovate configuration file within a repository.
+//
+// Checks standard locations (root, .github, .gitlab) and filenames
+// (renovate.json, .renovaterc.json, etc.) in order of precedence.
+// Returns the absolute path if found, or an empty string.
 func findRenovateConfig(repoPath string) string {
 	for _, loc := range renovateConfigLocations {
 		path := filepath.Join(repoPath, loc)
@@ -63,13 +61,11 @@ func findRenovateConfig(repoPath string) string {
 	return ""
 }
 
-/**
- * Heuristically detects the indentation style of a file.
- *
- * Scans for the first line break followed by whitespace to determine
- * if the file uses tabs or spaces (and how many). Defaults to 2 spaces
- * if no indentation pattern is found.
- */
+// detectIndentation heuristically detects the indentation style of a file.
+//
+// Scans for the first line break followed by whitespace to determine
+// if the file uses tabs or spaces (and how many). Defaults to 2 spaces
+// if no indentation pattern is found.
 func detectIndentation(content string) string {
 	match := indentationRegex.FindStringSubmatch(content)
 	if len(match) > 1 {
@@ -82,20 +78,18 @@ func detectIndentation(content string) string {
 	return "  "
 }
 
-/**
- * Updates the Renovate configuration to include the specified preset.
- *
- * This function performs the following operations:
- * 1. Reads and parses the existing JSON configuration.
- * 2. Normalizes the `extends` field (converting string to array if necessary).
- * 3. Checks if the preset is already present.
- *    - If present at the end: No change.
- *    - If present elsewhere: Moves it to the end to ensure it takes precedence.
- * 4. Appends the preset if missing.
- * 5. Writes the file back, attempting to preserve the original indentation.
- *
- * Returns true if the file was modified, false otherwise.
- */
+// addPresetToConfig updates the Renovate configuration to include the specified preset.
+//
+// This function performs the following operations:
+// 1. Reads and parses the existing JSON configuration.
+// 2. Normalizes the `extends` field (converting string to array if necessary).
+// 3. Checks if the preset is already present.
+//    - If present at the end: No change.
+//    - If present elsewhere: Moves it to the end to ensure it takes precedence.
+// 4. Appends the preset if missing.
+// 5. Writes the file back, attempting to preserve the original indentation.
+//
+// Returns true if the file was modified, false otherwise.
 func addPresetToConfig(configPath, presetRef string) (bool, error) {
 	contentBytes, err := os.ReadFile(configPath)
 	if err != nil {
@@ -166,19 +160,17 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 	return true, nil
 }
 
-/**
- * Orchestrates the update process for a single repository.
- *
- * Workflow:
- * 1. Clones the repository to a temporary directory.
- * 2. Locates the Renovate config.
- * 3. Creates a new branch.
- * 4. Adds/Updates the preset in the config.
- * 5. Commits and pushes changes (if modified).
- * 6. Creates a PR (unless --no-pr is set or gh is unavailable).
- *
- * Returns 0 on success, 1 on failure.
- */
+// processRepository orchestrates the update process for a single repository.
+//
+// Workflow:
+// 1. Clones the repository to a temporary directory.
+// 2. Locates the Renovate config.
+// 3. Creates a new branch.
+// 4. Adds/Updates the preset in the config.
+// 5. Commits and pushes changes (if modified).
+// 6. Creates a PR (unless --no-pr is set or gh is unavailable).
+//
+// Returns 0 on success, 1 on failure.
 func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable bool, ghError string) int {
 	slog.Info("Processing repository", "repo", fmt.Sprintf("%s/%s", owner, repo))
 

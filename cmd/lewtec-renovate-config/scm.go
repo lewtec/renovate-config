@@ -23,14 +23,12 @@ type ghRepo struct {
 	IsFork bool   `json:"isFork"`
 }
 
-/**
- * Executes a shell command in a specified directory.
- *
- * This wrapper handles:
- * - Setting the working directory.
- * - Logging the command and its output at Debug level (to avoid clutter).
- * - Capturing stdout separately from stderr to avoid contamination of structured output.
- */
+// runCommand executes a shell command in a specified directory.
+//
+// This wrapper handles:
+// - Setting the working directory.
+// - Logging the command and its output at Debug level (to avoid clutter).
+// - Capturing stdout separately from stderr to avoid contamination of structured output.
 func runCommand(dir string, name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
 	if dir != "" {
@@ -51,13 +49,11 @@ func runCommand(dir string, name string, args ...string) (string, error) {
 	return outStr, nil
 }
 
-/**
- * Verifies that the GitHub CLI (`gh`) is installed and authenticated.
- *
- * Returns:
- * - bool: true if available and authenticated.
- * - string: error message if unavailable or not logged in.
- */
+// checkGhCli verifies that the GitHub CLI (`gh`) is installed and authenticated.
+//
+// Returns:
+// - bool: true if available and authenticated.
+// - string: error message if unavailable or not logged in.
 func checkGhCli() (bool, string) {
 	_, err := runCommand("", "gh", "--version")
 	if err != nil {
@@ -71,14 +67,12 @@ func checkGhCli() (bool, string) {
 	return true, ""
 }
 
-/**
- * Clones a repository to a destination path.
- *
- * Attempts to use `gh repo clone` first (for better auth handling),
- * and falls back to standard `git clone` (HTTPS) if `gh` fails.
- *
- * Returns true if cloning succeeded, false otherwise.
- */
+// cloneRepository clones a repository to a destination path.
+//
+// Attempts to use `gh repo clone` first (for better auth handling),
+// and falls back to standard `git clone` (HTTPS) if `gh` fails.
+//
+// Returns true if cloning succeeded, false otherwise.
 func cloneRepository(owner, repo, destination string) bool {
 	_, err := runCommand("", "gh", "repo", "clone", fmt.Sprintf("%s/%s", owner, repo), destination)
 	if err != nil {
@@ -93,12 +87,10 @@ func cloneRepository(owner, repo, destination string) bool {
 	return true
 }
 
-/**
- * Identifies the default branch of the repository (e.g., main, master).
- *
- * Queries the git remote `origin/HEAD` to find the default branch.
- * Fallbacks to "main" if the query fails or returns nothing.
- */
+// getDefaultBranch identifies the default branch of the repository (e.g., main, master).
+//
+// Queries the git remote `origin/HEAD` to find the default branch.
+// Fallbacks to "main" if the query fails or returns nothing.
 func getDefaultBranch(repoPath string) string {
 	output, err := runCommand(repoPath, "git", "symbolic-ref", "refs/remotes/origin/HEAD")
 	if err != nil {
@@ -113,12 +105,10 @@ func getDefaultBranch(repoPath string) string {
 	return branch
 }
 
-/**
- * Creates a Pull Request using the GitHub CLI.
- *
- * If PR creation fails (e.g., branch already exists, permission issues),
- * it logs the error but does not crash, allowing the user to create it manually.
- */
+// createGitHubPR creates a Pull Request using the GitHub CLI.
+//
+// If PR creation fails (e.g., branch already exists, permission issues),
+// it logs the error but does not crash, allowing the user to create it manually.
 func createGitHubPR(repoPath, owner, repo, baseBranch, headBranch, title, body string) bool {
 	output, err := runCommand(repoPath, "gh", "pr", "create",
 		"--repo", fmt.Sprintf("%s/%s", owner, repo),
@@ -136,14 +126,12 @@ func createGitHubPR(repoPath, owner, repo, baseBranch, headBranch, title, body s
 	return true
 }
 
-/**
- * Fetches a list of repository names for a given owner (user or org).
- *
- * Uses `gh repo list` to retrieve repositories.
- * - Filters out archived repositories automatically (via `gh` flag).
- * - Optionally includes forks based on the `includeForks` parameter.
- * - Returns a list of repository names (without owner prefix).
- */
+// getRepositories fetches a list of repository names for a given owner (user or org).
+//
+// Uses `gh repo list` to retrieve repositories.
+// - Filters out archived repositories automatically (via `gh` flag).
+// - Optionally includes forks based on the `includeForks` parameter.
+// - Returns a list of repository names (without owner prefix).
 func getRepositories(owner string, includeForks bool) ([]string, error) {
 	slog.Info("Fetching repositories", "owner", owner)
 	output, err := runCommand("", "gh", "repo", "list", owner, "--json", "name,isFork", "--limit", "1000", "--no-archived")
