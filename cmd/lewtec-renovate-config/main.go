@@ -305,7 +305,7 @@ func main() {
 					bar.Add(1)
 				}
 				if failures > 0 {
-					slog.Error("Finished with failures", "failures", failures, "total", len(repos))
+					ReportError(fmt.Errorf("finished with %d failures out of %d repos", failures, len(repos)), "Finished with failures")
 					os.Exit(1)
 				}
 				slog.Info("Successfully processed all repositories", "count", len(repos))
