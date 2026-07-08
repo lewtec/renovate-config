@@ -179,7 +179,11 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 		ReportError(err, "Error creating temp dir")
 		return 1
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			ReportError(err, "Error removing temp dir")
+		}
+	}()
 
 	repoPath := filepath.Join(tmpDir, repo)
 

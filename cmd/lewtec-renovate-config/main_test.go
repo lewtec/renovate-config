@@ -12,7 +12,11 @@ func TestAddPresetToConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("Error removing temp dir: %v", err)
+		}
+	}()
 
 	tests := []struct {
 		name            string
