@@ -301,15 +301,15 @@ func main() {
 
 				bar := progressbar.Default(int64(len(repos)))
 
-				failures := 0
+				var errs []error
 				for _, repo := range repos {
 					if res := processRepository(owner, repo, preset, noPr, ghAvailable, ghError); res != 0 {
-						failures++
+						errs = append(errs, fmt.Errorf("failed processing %s", repo))
 					}
 					bar.Add(1)
 				}
-				if failures > 0 {
-					ReportError(fmt.Errorf("finished with %d failures", failures), "Finished with failures", "failures", failures, "total", len(repos))
+				if len(errs) > 0 {
+					ReportError(fmt.Errorf("finished with %d failures: %v", len(errs), errs), "Finished with failures", "failures", len(errs), "total", len(repos))
 					os.Exit(1)
 				}
 				slog.Info("Successfully processed all repositories", "count", len(repos))
