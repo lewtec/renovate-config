@@ -1,0 +1,19 @@
+This PR fixes a tech-debt violation in `cmd/lewtec-renovate-config/main_test.go` where an error returned by `os.RemoveAll` inside a `defer` was implicitly ignored.
+
+### Assumptions
+- The test relies on `tmpDir` being cleaned up correctly. Failing to clean up shouldn't crash the test immediately, but logging the error using `t.Errorf` is necessary to highlight potential issues running tests locally or in CI environments over time.
+
+### Alternatives Not Chosen
+- Wrapping the `os.RemoveAll` call directly in an inline statement instead of a function block. The function wrapper `defer func() { if err := ... }()` is preferred for explicitly managing errors and interacting with the `testing.T` instance without changing scope.
+
+### How To Pivot
+- If cleanup failures happen consistently on certain OSes (e.g. Windows file locking), we can change `t.Errorf` to `t.Logf` to avoid failing the test suite completely, or wrap the error check with additional retry logic.
+
+### Next Knobs
+1. Apply similar validation to all `os.RemoveAll` operations outside tests.
+2. Integrate `golangci-lint` with the `errcheck` linter to catch these implicitly ignored errors automatically.
+3. Consolidate test temporary directory creation into a helper package.
+
+### Optional follow-ups
+- Check for other standard library functions that return unhandled errors on `defer` blocks, like `file.Close()`.
+- Add retry logic for removing temporary directories if they are locked by the OS.
