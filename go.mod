@@ -1,4 +1,4 @@
-module renovate-config-cli
+module github.com/lewtec/renovate-config
 
 go 1.23.4
 
