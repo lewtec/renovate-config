@@ -1,12 +1,3 @@
-/*
- * SCM (Source Control Management) Module
- *
- * Refactoring Justification:
- * This file extracts Git and GitHub CLI interactions from main.go to adhere to the
- * Single Responsibility Principle (SRP) as defined by Robert C. Martin.
- * It acts as a Facade (GoF) for the underlying command-line tools, isolating
- * infrastructure concerns from the application's business logic.
- */
 package main
 
 import (
@@ -90,15 +81,17 @@ func cloneRepository(owner, repo, destination string) bool {
 // getDefaultBranch identifies the default branch of the repository (e.g., main, master).
 //
 // Queries the git remote `origin/HEAD` to find the default branch.
-// Fallbacks to "main" if the query fails or returns nothing.
+// Falls back to "main" if the query fails or returns nothing. Missing
+// origin/HEAD is common after some clones, so that path is recoverable and
+// must not go through ReportError (reserved for unexpected failures).
 func getDefaultBranch(repoPath string) string {
 	output, err := runCommand(repoPath, "git", "symbolic-ref", "refs/remotes/origin/HEAD")
 	if err != nil {
-		ReportError(err, "Failed to get default branch, defaulting to main")
+		slog.Warn("Could not resolve origin/HEAD; defaulting to main", "error", err)
 		return "main"
 	}
 	branch := strings.TrimSpace(output)
-	branch = strings.Replace(branch, "refs/remotes/origin/", "", 1)
+	branch = strings.TrimPrefix(branch, "refs/remotes/origin/")
 	if branch == "" {
 		return "main"
 	}
