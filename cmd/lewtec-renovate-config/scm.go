@@ -5,8 +5,14 @@ import (
 	"fmt"
 	"log/slog"
 	"os/exec"
+	"strconv"
 	"strings"
 )
+
+// repoListLimit is the max number of repositories requested from `gh repo list`
+// in one bulk run. gh paginates internally up to this cap; if we receive exactly
+// this many names, the owner may have more repos than we processed.
+const repoListLimit = 10000
 
 // ghRepo represents a repository in the GitHub CLI JSON output.
 type ghRepo struct {
@@ -119,15 +125,46 @@ func createGitHubPR(repoPath, owner, repo, baseBranch, headBranch, title, body s
 	return true
 }
 
+// ghRepoListArgs builds arguments for `gh repo list` (excluding the `gh` binary).
+//
+// When includeForks is false, passes --source so forks are excluded server-side
+// instead of downloading them and dropping them client-side.
+func ghRepoListArgs(owner string, includeForks bool, limit int) []string {
+	args := []string{
+		"repo", "list", owner,
+		"--json", "name,isFork",
+		"--limit", strconv.Itoa(limit),
+		"--no-archived",
+	}
+	if !includeForks {
+		args = append(args, "--source")
+	}
+	return args
+}
+
+// filterRepoNames returns repository names, optionally dropping forks.
+func filterRepoNames(repos []ghRepo, includeForks bool) []string {
+	var names []string
+	for _, r := range repos {
+		if !includeForks && r.IsFork {
+			continue
+		}
+		names = append(names, r.Name)
+	}
+	return names
+}
+
 // getRepositories fetches a list of repository names for a given owner (user or org).
 //
 // Uses `gh repo list` to retrieve repositories.
 // - Filters out archived repositories automatically (via `gh` flag).
 // - Optionally includes forks based on the `includeForks` parameter.
+// - Warns if the result count hits repoListLimit (possible silent truncation).
 // - Returns a list of repository names (without owner prefix).
 func getRepositories(owner string, includeForks bool) ([]string, error) {
-	slog.Info("Fetching repositories", "owner", owner)
-	output, err := runCommand("", "gh", "repo", "list", owner, "--json", "name,isFork", "--limit", "1000", "--no-archived")
+	slog.Info("Fetching repositories", "owner", owner, "includeForks", includeForks, "limit", repoListLimit)
+	args := ghRepoListArgs(owner, includeForks, repoListLimit)
+	output, err := runCommand("", "gh", args...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,12 +174,13 @@ func getRepositories(owner string, includeForks bool) ([]string, error) {
 		return nil, err
 	}
 
-	var names []string
-	for _, r := range repos {
-		if !includeForks && r.IsFork {
-			continue
-		}
-		names = append(names, r.Name)
+	names := filterRepoNames(repos, includeForks)
+	if len(repos) >= repoListLimit {
+		slog.Warn("Repository list may be truncated; some repos may be skipped",
+			"owner", owner,
+			"limit", repoListLimit,
+			"returned", len(repos),
+		)
 	}
 	return names, nil
 }
