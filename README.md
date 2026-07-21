@@ -88,11 +88,10 @@ go run ./cmd/lewtec-renovate-config <owner> <repo>
 ### base
 
 The base preset includes:
-- Recommended configuration
-- Dependency dashboard
-- Vulnerability alerts
+- Recommended configuration (`config:recommended`)
+- Dependency dashboard and vulnerability alerts
 - Docker support with digest pinning
 - GitHub Actions digest pinning
-- Lock file maintenance
-- Automerge for dev dependencies (minor updates)
-- Custom package rules for Go, Terraform, and Cloudflare packages
+- Daily schedule (`schedule:daily`) with OpenSSF scorecard and workarounds
+- Automerge for dev dependency minor updates
+- Custom package rules for Go, Node, Bun, uv, Terraform, and Cloudflare packages
