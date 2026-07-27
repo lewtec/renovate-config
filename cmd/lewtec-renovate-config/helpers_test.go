@@ -54,6 +54,18 @@ func TestDetectIndentation(t *testing.T) {
 	}
 }
 
+func writeEmptyConfig(t *testing.T, dir, rel string) string {
+	t.Helper()
+	path := filepath.Join(dir, rel)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func TestFindRenovateConfig(t *testing.T) {
 	t.Run("missing returns empty", func(t *testing.T) {
 		dir := t.TempDir()
@@ -62,36 +74,33 @@ func TestFindRenovateConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("prefers first location in precedence order", func(t *testing.T) {
-		dir := t.TempDir()
-		// Create a later location first so we prove order, not discovery race.
-		later := filepath.Join(dir, ".renovaterc")
-		if err := os.WriteFile(later, []byte("{}\n"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		preferred := filepath.Join(dir, "renovate.json")
-		if err := os.WriteFile(preferred, []byte("{}\n"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		got := findRenovateConfig(dir)
-		if got != preferred {
-			t.Fatalf("findRenovateConfig() = %q, want %q", got, preferred)
-		}
-	})
+	tests := []struct {
+		name  string
+		files []string // relative paths to create; first entry is the expected match
+	}{
+		{
+			// Create a later location first so we prove order, not discovery race.
+			name:  "prefers first location in precedence order",
+			files: []string{"renovate.json", ".renovaterc"},
+		},
+		{
+			name:  "finds nested github path when root missing",
+			files: []string{".github/renovate.json"},
+		},
+	}
 
-	t.Run("finds nested github path when root missing", func(t *testing.T) {
-		dir := t.TempDir()
-		nestedDir := filepath.Join(dir, ".github")
-		if err := os.MkdirAll(nestedDir, 0o755); err != nil {
-			t.Fatal(err)
-		}
-		want := filepath.Join(nestedDir, "renovate.json")
-		if err := os.WriteFile(want, []byte("{}\n"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		got := findRenovateConfig(dir)
-		if got != want {
-			t.Fatalf("findRenovateConfig() = %q, want %q", got, want)
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			// Create non-preferred paths first so discovery order is the subject under test.
+			for i := len(tt.files) - 1; i >= 0; i-- {
+				writeEmptyConfig(t, dir, tt.files[i])
+			}
+			want := filepath.Join(dir, tt.files[0])
+			got := findRenovateConfig(dir)
+			if got != want {
+				t.Fatalf("findRenovateConfig() = %q, want %q", got, want)
+			}
+		})
+	}
 }

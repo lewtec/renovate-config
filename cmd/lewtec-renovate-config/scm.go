@@ -42,20 +42,16 @@ func runCommand(dir string, name string, args ...string) (string, error) {
 
 // checkGhCli verifies that the GitHub CLI (`gh`) is installed and authenticated.
 //
-// Returns:
-// - bool: true if available and authenticated.
-// - string: error message if unavailable or not logged in.
-func checkGhCli() (bool, string) {
-	_, err := runCommand("", "gh", "--version")
-	if err != nil {
-		return false, "gh CLI not found. Please install it: https://cli.github.com/"
+// Returns true when available and authenticated. On failure, err is a sentinel
+// (ErrGhCLINotFound or ErrGhCLINotAuth) suitable for ReportError / slog.
+func checkGhCli() (ok bool, err error) {
+	if _, err := runCommand("", "gh", "--version"); err != nil {
+		return false, ErrGhCLINotFound
 	}
-
-	_, err = runCommand("", "gh", "auth", "status")
-	if err != nil {
-		return false, "gh CLI is not authenticated. Please run: gh auth login"
+	if _, err := runCommand("", "gh", "auth", "status"); err != nil {
+		return false, ErrGhCLINotAuth
 	}
-	return true, ""
+	return true, nil
 }
 
 // cloneRepository clones a repository to a destination path.

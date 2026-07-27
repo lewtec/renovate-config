@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -171,7 +172,7 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 // 6. Creates a PR (unless --no-pr is set or gh is unavailable).
 //
 // Returns 0 on success, 1 on failure.
-func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable bool, ghError string) int {
+func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable bool, ghErr error) int {
 	slog.Info("Processing repository", "repo", fmt.Sprintf("%s/%s", owner, repo))
 
 	tmpDir, err := os.MkdirTemp("", "renovate-cli-*")
@@ -194,7 +195,7 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 
 	configPath := findRenovateConfig(repoPath)
 	if configPath == "" {
-		ReportError(fmt.Errorf("config not found"), "No renovate configuration file found", "repo", fmt.Sprintf("%s/%s", owner, repo))
+		ReportError(ErrConfigNotFound, "No renovate configuration file found", "repo", fmt.Sprintf("%s/%s", owner, repo))
 		return 1
 	}
 
@@ -254,7 +255,7 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 			slog.Info("Creating pull request")
 			createGitHubPR(repoPath, owner, repo, defaultBranch, branchName, prTitle, prBody)
 		} else {
-			slog.Warn("Cannot create PR", "reason", ghError)
+			slog.Warn("Cannot create PR", "reason", ghErr)
 			slog.Info("Branch pushed successfully", "branch", branchName)
 		}
 	} else {
@@ -276,9 +277,9 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			owner := args[0]
 
-			ghAvailable, ghError := checkGhCli()
+			ghAvailable, ghErr := checkGhCli()
 			if !ghAvailable {
-				slog.Warn("GitHub CLI warning", "warning", ghError)
+				slog.Warn("GitHub CLI warning", "warning", ghErr)
 				if !noPr {
 					slog.Warn("PR creation will not be available. Use --no-pr to suppress this warning")
 				}
@@ -286,10 +287,10 @@ func main() {
 
 			if len(args) == 2 {
 				repo := args[1]
-				os.Exit(processRepository(owner, repo, preset, noPr, ghAvailable, ghError))
+				os.Exit(processRepository(owner, repo, preset, noPr, ghAvailable, ghErr))
 			} else {
 				if !ghAvailable {
-					ReportError(fmt.Errorf(ghError), "GitHub CLI not available")
+					ReportError(ghErr, "GitHub CLI not available")
 					os.Exit(1)
 				}
 				repos, err := getRepositories(owner, includeForks)
@@ -303,13 +304,13 @@ func main() {
 
 				var errs []error
 				for _, repo := range repos {
-					if res := processRepository(owner, repo, preset, noPr, ghAvailable, ghError); res != 0 {
-						errs = append(errs, fmt.Errorf("failed processing %s", repo))
+					if res := processRepository(owner, repo, preset, noPr, ghAvailable, ghErr); res != 0 {
+						errs = append(errs, fmt.Errorf("%s: %w", repo, ErrRepoProcess))
 					}
 					bar.Add(1)
 				}
 				if len(errs) > 0 {
-					ReportError(fmt.Errorf("finished with %d failures: %v", len(errs), errs), "Finished with failures", "failures", len(errs), "total", len(repos))
+					ReportError(fmt.Errorf("%w: %w", ErrBatchProcessing, errors.Join(errs...)), "Finished with failures", "failures", len(errs), "total", len(repos))
 					os.Exit(1)
 				}
 				slog.Info("Successfully processed all repositories", "count", len(repos))
