@@ -62,6 +62,20 @@ func findRenovateConfig(repoPath string) string {
 	return ""
 }
 
+// ensureRenovateConfig returns an existing Renovate config path, or creates
+// renovate.json at the repository root when none of the standard locations exist.
+func ensureRenovateConfig(repoPath string) (string, error) {
+	if path := findRenovateConfig(repoPath); path != "" {
+		return path, nil
+	}
+	path := filepath.Join(repoPath, "renovate.json")
+	slog.Info("No renovate config found; creating", "path", path)
+	if err := os.WriteFile(path, []byte("{}\n"), 0o644); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 // detectIndentation heuristically detects the indentation style of a file.
 //
 // Scans for the first line break followed by whitespace to determine
@@ -165,7 +179,7 @@ func addPresetToConfig(configPath, presetRef string) (bool, error) {
 //
 // Workflow:
 // 1. Clones the repository to a temporary directory.
-// 2. Locates the Renovate config.
+// 2. Locates the Renovate config, or creates renovate.json at the repo root.
 // 3. Creates a new branch.
 // 4. Adds/Updates the preset in the config.
 // 5. Commits and pushes changes (if modified).
@@ -193,9 +207,9 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 		return 1
 	}
 
-	configPath := findRenovateConfig(repoPath)
-	if configPath == "" {
-		ReportError(ErrConfigNotFound, "No renovate configuration file found", "repo", fmt.Sprintf("%s/%s", owner, repo))
+	configPath, err := ensureRenovateConfig(repoPath)
+	if err != nil {
+		ReportError(err, "Error ensuring renovate config", "repo", fmt.Sprintf("%s/%s", owner, repo))
 		return 1
 	}
 

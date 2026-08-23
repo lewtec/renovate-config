@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -64,6 +65,52 @@ func writeEmptyConfig(t *testing.T, dir, rel string) string {
 		t.Fatal(err)
 	}
 	return path
+}
+
+func TestEnsureRenovateConfig(t *testing.T) {
+	t.Run("creates root renovate.json when missing", func(t *testing.T) {
+		dir := t.TempDir()
+		got, err := ensureRenovateConfig(dir)
+		if err != nil {
+			t.Fatalf("ensureRenovateConfig() error = %v", err)
+		}
+		want := filepath.Join(dir, "renovate.json")
+		if got != want {
+			t.Fatalf("ensureRenovateConfig() = %q, want %q", got, want)
+		}
+		content, err := os.ReadFile(got)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(content) != "{}\n" {
+			t.Fatalf("created file content = %q, want %q", content, "{}\n")
+		}
+	})
+
+	t.Run("returns existing config without rewriting it", func(t *testing.T) {
+		dir := t.TempDir()
+		existing := writeEmptyConfig(t, dir, ".github/renovate.json")
+		if err := os.WriteFile(existing, []byte("{\n  \"extends\": []\n}\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		got, err := ensureRenovateConfig(dir)
+		if err != nil {
+			t.Fatalf("ensureRenovateConfig() error = %v", err)
+		}
+		if got != existing {
+			t.Fatalf("ensureRenovateConfig() = %q, want %q", got, existing)
+		}
+		if _, err := os.Stat(filepath.Join(dir, "renovate.json")); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("did not expect a new root renovate.json, stat err = %v", err)
+		}
+		content, err := os.ReadFile(existing)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(content) != "{\n  \"extends\": []\n}\n" {
+			t.Fatalf("existing file was rewritten: %q", content)
+		}
+	})
 }
 
 func TestFindRenovateConfig(t *testing.T) {

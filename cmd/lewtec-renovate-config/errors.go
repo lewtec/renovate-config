@@ -6,7 +6,6 @@ import (
 )
 
 // Sentinel errors for ReportError / wrapping with fmt.Errorf %w.
-var ErrConfigNotFound = errors.New("config not found")
 var ErrGhCLINotFound = errors.New("gh CLI not found. Please install it: https://cli.github.com/")
 var ErrGhCLINotAuth = errors.New("gh CLI is not authenticated. Please run: gh auth login")
 var ErrRepoProcess = errors.New("processing repository")
