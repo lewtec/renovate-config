@@ -2,7 +2,7 @@
 LOG_LEVEL = "debug"
 
 [tools]
-node = "24.11.1"
+node = "24.19.0"
 go = "1.23.4"
 "go:golang.org/x/tools/gopls" = "0.21.0"
 
