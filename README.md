@@ -46,7 +46,7 @@ lewtec-renovate-config myorg myrepo
 
 This will:
 1. Clone the target repository.
-2. Find the `renovate.json` file.
+2. Find the Renovate config, or create `renovate.json` at the repo root if none exists.
 3. Add the preset to the `extends` array.
 4. Create a new branch (`chore/add-renovate-config-preset`).
 5. Commit and push the changes.
