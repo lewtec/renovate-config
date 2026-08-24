@@ -67,6 +67,10 @@ func writeEmptyConfig(t *testing.T, dir, rel string) string {
 }
 
 func TestFindRenovateConfig(t *testing.T) {
+	if len(renovateConfigLocations) == 0 {
+		t.Fatal("renovateConfigLocations is empty")
+	}
+
 	t.Run("missing returns empty", func(t *testing.T) {
 		dir := t.TempDir()
 		if got := findRenovateConfig(dir); got != "" {
@@ -74,33 +78,29 @@ func TestFindRenovateConfig(t *testing.T) {
 		}
 	})
 
-	tests := []struct {
-		name  string
-		files []string // relative paths to create; first entry is the expected match
-	}{
-		{
-			// Create a later location first so we prove order, not discovery race.
-			name:  "prefers first location in precedence order",
-			files: []string{"renovate.json", ".renovaterc"},
-		},
-		{
-			name:  "finds nested github path when root missing",
-			files: []string{".github/renovate.json"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	// Drive cases from renovateConfigLocations so the search list is not copied here.
+	for _, loc := range renovateConfigLocations {
+		t.Run("finds "+loc, func(t *testing.T) {
 			dir := t.TempDir()
-			// Create non-preferred paths first so discovery order is the subject under test.
-			for i := len(tt.files) - 1; i >= 0; i-- {
-				writeEmptyConfig(t, dir, tt.files[i])
-			}
-			want := filepath.Join(dir, tt.files[0])
+			writeEmptyConfig(t, dir, loc)
+			want := filepath.Join(dir, loc)
 			got := findRenovateConfig(dir)
 			if got != want {
 				t.Fatalf("findRenovateConfig() = %q, want %q", got, want)
 			}
 		})
 	}
+
+	t.Run("prefers first location when all exist", func(t *testing.T) {
+		dir := t.TempDir()
+		// Create later paths first so we prove precedence, not discovery race.
+		for i := len(renovateConfigLocations) - 1; i >= 0; i-- {
+			writeEmptyConfig(t, dir, renovateConfigLocations[i])
+		}
+		want := filepath.Join(dir, renovateConfigLocations[0])
+		got := findRenovateConfig(dir)
+		if got != want {
+			t.Fatalf("findRenovateConfig() = %q, want %q", got, want)
+		}
+	})
 }
