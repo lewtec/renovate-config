@@ -280,8 +280,25 @@ func processRepository(owner, repo, presetRef string, noPr bool, ghAvailable boo
 	return 0
 }
 
+// parseLogLevel maps common LOG_LEVEL strings to slog.Level.
+// Unknown or empty values fall back to Info so misconfiguration is safe.
+func parseLogLevel(s string) slog.Level {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "debug":
+		return slog.LevelDebug
+	case "warn", "warning":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
 func main() {
-	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})
+	// mise.toml sets LOG_LEVEL=debug for local runs; honor it (and any explicit export).
+	level := parseLogLevel(os.Getenv("LOG_LEVEL"))
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 	slog.SetDefault(slog.New(handler))
 
 	var rootCmd = &cobra.Command{
