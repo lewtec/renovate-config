@@ -18,6 +18,9 @@
     ":automergeRequireAllStatusChecks",
     "schedule:daily"
   ],
+  "ignorePaths": [
+    "**/third_party/**"
+  ],
   "updateNotScheduled": false,
   "automergeType": "pr",
   "configMigration": true,
