@@ -28,6 +28,11 @@
   "nix": {
     "enabled": true
   },
+  // PRs de dependências Go chegam com go.sum incompleto sem isto, e o
+  // `go generate` de quem consome falha com "missing go.sum entry".
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
   "customManagers": [
     {
       "customType": "jsonata",

@@ -94,4 +94,5 @@ The base preset includes:
 - GitHub Actions digest pinning
 - Daily schedule (`schedule:daily`) with OpenSSF scorecard and workarounds
 - Automerge for dev dependency minor updates
+- `go mod tidy` on every Go dependency PR (`postUpdateOptions: gomodTidy`), so `go.sum` stays complete
 - Custom package rules for Go, Node, Bun, uv, Terraform, and Cloudflare packages
