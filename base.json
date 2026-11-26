@@ -42,8 +42,8 @@
     },
     {
       "customType": "regex",
-      "fileMatch": [
-        "(^|/|\\.)mise\\.toml$"
+      "managerFilePatterns": [
+        "/(^|/|\\.)mise\\.toml$/"
       ],
       "matchStrings": [
         "\"github:(?<packageName>[^\"]+)\"\\s*=\\s*\"(?<currentValue>[^\"]+)\""
